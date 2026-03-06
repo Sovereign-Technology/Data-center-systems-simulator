@@ -1,0 +1,937 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DataCore OS — Digital Twin Simulator</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#060a10;--bg2:#09101a;--bg3:#0d1520;--bg4:#080d14;
+  --border:#18253a;--border2:#00e5ff0e;
+  --text:#c4d4e8;--muted:#4a6278;--muted2:#6a8298;
+  --cyan:#00e5ff;--green:#2ed573;--yellow:#ffa502;--red:#ff4757;
+  --orange:#ff6b35;--pink:#fd79a8;--lime:#a8ff78;--blue:#74b9ff;--gold:#f7d060;
+  --cdx:#7fff7f;--cdx2:#39ff9a;
+}
+html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:'Share Tech Mono',monospace;}
+::-webkit-scrollbar{width:4px;height:4px;}
+::-webkit-scrollbar-track{background:#060a10;}
+::-webkit-scrollbar-thumb{background:#00e5ff33;border-radius:2px;}
+#header{display:flex;align-items:center;gap:14px;padding:7px 14px;background:var(--bg2);border-bottom:1px solid var(--border2);height:46px;flex-shrink:0;}
+#logo{font-family:'Orbitron',sans-serif;font-size:15px;font-weight:900;color:var(--cyan);letter-spacing:3px;white-space:nowrap;}
+#logo span{color:#39ff9a;}
+#subtitle{font-size:8px;color:var(--muted);letter-spacing:2px;white-space:nowrap;}
+#header-right{margin-left:auto;display:flex;gap:10px;align-items:center;}
+.sc-label{font-size:8px;color:var(--muted);letter-spacing:1px;}
+.sc-btn{padding:2px 7px;font-size:8px;letter-spacing:1px;border-radius:2px;cursor:pointer;background:transparent;color:var(--muted);border:1px solid var(--border);font-family:'Share Tech Mono',monospace;transition:all .2s;}
+.sc-btn.active{background:#00e5ff1a;color:var(--cyan);border-color:#00e5ff44;}
+.sc-btn:hover{filter:brightness(1.3);}
+#sim-toggle{padding:3px 11px;font-size:8px;letter-spacing:2px;border-radius:2px;cursor:pointer;font-family:'Share Tech Mono',monospace;}
+#sim-toggle.live{background:#2ed57315;color:var(--green);border:1px solid #2ed57344;}
+#sim-toggle.paused{background:#ff475715;color:var(--red);border:1px solid #ff475744;}
+.hstat{text-align:center;}
+.hstat-label{font-size:7px;color:var(--muted);letter-spacing:1px;}
+.hstat-val{font-family:'Orbitron',sans-serif;font-size:12px;font-weight:700;color:var(--cyan);}
+#main{display:flex;height:calc(100vh - 46px);overflow:hidden;}
+#left{width:430px;flex-shrink:0;border-right:1px solid var(--border2);display:flex;flex-direction:column;background:var(--bg);}
+#left-header{padding:7px 11px;border-bottom:1px solid var(--border2);display:flex;align-items:center;gap:7px;flex-shrink:0;}
+.panel-title{font-family:'Orbitron',sans-serif;font-size:9px;color:var(--cyan);letter-spacing:2px;}
+#palette{padding:5px 9px;border-bottom:1px solid var(--border2);display:flex;gap:4px;flex-wrap:wrap;flex-shrink:0;}
+.pal-btn{padding:2px 6px;font-size:7px;letter-spacing:1px;border-radius:2px;cursor:pointer;background:var(--bg4);color:var(--muted2);border:1px solid var(--border);font-family:'Share Tech Mono',monospace;transition:all .2s;}
+.pal-btn.active{color:#fff;filter:brightness(1.5);}
+#floor-wrap{flex:1;overflow:auto;padding:8px;}
+#grid{display:grid;grid-template-columns:repeat(12,1fr);gap:2px;width:100%;}
+.cell{aspect-ratio:1;background:var(--bg4);border:1px solid #0c1520;border-radius:2px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:background .15s;position:relative;overflow:hidden;font-size:7px;color:#1a2a3a;}
+.cell:hover{background:#0d1e2c;}
+.cell.placing:hover{background:#00e5ff12;border-color:#00e5ff44;}
+.cell.occupied{background:var(--bg3);cursor:grab;}
+.cell.selected{border-color:#00e5ff66!important;}
+.cell.draghover{background:#00e5ff16!important;border-color:#00e5ff55!important;}
+.unit-icon{font-size:14px;line-height:1;}
+.unit-bar-wrap{width:80%;height:2px;background:#1a2a3a;border-radius:1px;margin-top:2px;}
+.unit-bar{height:100%;border-radius:1px;transition:width .9s;}
+.unit-dot{font-size:6px;margin-top:1px;}
+#legend{display:flex;gap:6px;flex-wrap:wrap;padding:5px 9px 4px;border-top:1px solid var(--border2);}
+.leg-item{display:flex;align-items:center;gap:3px;font-size:7px;color:var(--muted);}
+#right{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+#tabs{display:flex;border-bottom:1px solid var(--border2);background:var(--bg);flex-shrink:0;overflow-x:auto;}
+.tab-btn{padding:8px 14px;font-size:8px;letter-spacing:2px;cursor:pointer;background:transparent;color:var(--muted);border:none;border-bottom:2px solid transparent;font-family:'Share Tech Mono',monospace;transition:all .15s;white-space:nowrap;}
+.tab-btn:hover{background:#00e5ff07;}
+.tab-btn.active{background:var(--bg3);color:var(--cyan);border-bottom:2px solid var(--cyan);}
+#sel-label{margin-left:auto;padding:8px 12px;font-size:8px;color:#00e5ff55;letter-spacing:1px;white-space:nowrap;}
+.tab-content{flex:1;overflow:auto;padding:12px;display:none;flex-direction:column;gap:10px;}
+.tab-content.active{display:flex;}
+.card{background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:10px;}
+.card-title{font-size:8px;color:var(--muted);letter-spacing:2px;margin-bottom:7px;}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.stat-card{background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:10px;}
+.stat-label{font-size:7px;color:var(--muted);letter-spacing:2px;margin-bottom:3px;}
+.stat-val{font-family:'Orbitron',sans-serif;font-size:17px;font-weight:700;color:var(--cyan);margin-bottom:5px;}
+.stat-sub{font-size:7px;color:var(--muted);}
+#unit-table{width:100%;border-collapse:collapse;font-size:8px;}
+#unit-table thead tr{background:var(--bg4);}
+#unit-table th{padding:4px 9px;text-align:left;color:var(--muted);letter-spacing:1px;font-weight:normal;white-space:nowrap;}
+#unit-table tbody tr{cursor:pointer;border-left:2px solid transparent;transition:background .1s;}
+#unit-table tbody tr:nth-child(even){background:var(--bg4);}
+#unit-table tbody tr:hover{background:#00e5ff05;}
+#unit-table tbody tr.row-sel{background:#00e5ff07;border-left:2px solid var(--cyan);}
+#unit-table td{padding:4px 9px;white-space:nowrap;}
+.tbar-wrap{display:flex;align-items:center;gap:4px;}
+.tbar{width:32px;height:2px;background:#1a2a3a;border-radius:1px;display:inline-block;}
+.tbar-fill{height:100%;border-radius:1px;}
+#detail-panel{background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:12px;}
+.det-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:9px;}
+.det-cell{background:var(--bg4);border-radius:3px;padding:7px;}
+.det-label{font-size:7px;color:var(--muted);letter-spacing:1px;margin-bottom:3px;}
+.det-val{font-family:'Orbitron',sans-serif;font-size:12px;font-weight:700;color:var(--text);margin-bottom:3px;}
+.det-bar-wrap{height:2px;background:#1a2a3a;border-radius:1px;}
+.det-bar{height:100%;border-radius:1px;transition:width .8s;}
+#config-list{width:200px;flex-shrink:0;overflow-y:auto;}
+.cfg-unit{padding:6px 9px;margin-bottom:3px;border-radius:3px;cursor:pointer;border:1px solid var(--border);background:var(--bg3);transition:all .15s;}
+.cfg-unit:hover{background:#0d1e2c;}
+.cfg-unit.active{background:#0d1e2c;}
+.cfg-unit-name{font-size:8px;color:var(--text);}
+.cfg-unit-sub{font-size:7px;color:var(--muted);}
+.cfg-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0;}
+#config-panel{flex:1;overflow-y:auto;}
+.cfg-card{background:var(--bg3);border-radius:4px;padding:14px;}
+.cfg-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;}
+.cfg-title{font-family:'Orbitron',sans-serif;font-size:12px;font-weight:700;}
+.cfg-sub{font-size:7px;color:var(--muted);margin-top:2px;}
+#btn-remove{padding:2px 10px;font-size:8px;letter-spacing:1px;color:var(--red);background:#ff475715;border:1px solid #ff475744;border-radius:2px;cursor:pointer;font-family:'Share Tech Mono',monospace;}
+.field-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:9px;}
+.field{background:var(--bg4);padding:10px;border-radius:3px;border:1px solid var(--border);}
+.field-label{font-size:7px;color:var(--muted);letter-spacing:1px;margin-bottom:5px;}
+.field input[type=number]{background:var(--bg3);border:1px solid #00e5ff33;color:var(--cyan);padding:3px 6px;border-radius:2px;font-size:12px;width:100%;font-family:'Orbitron',sans-serif;font-weight:700;}
+.field input[type=range]{width:100%;accent-color:var(--cyan);}
+.range-labels{display:flex;justify-content:space-between;font-size:7px;color:var(--muted);margin-top:2px;}
+.range-val{font-family:'Orbitron',sans-serif;font-size:12px;color:var(--cyan);font-weight:700;}
+.field select{background:var(--bg3);border:1px solid #00e5ff33;color:var(--text);padding:3px 6px;border-radius:2px;font-size:10px;width:100%;cursor:pointer;}
+.impact-card{background:var(--bg4);border:1px solid #2ed57330;border-radius:3px;padding:10px;}
+.impact-title{font-size:8px;color:var(--green);letter-spacing:2px;margin-bottom:8px;}
+.impact-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;}
+.impact-val{font-family:'Orbitron',sans-serif;font-size:11px;color:var(--green);font-weight:700;}
+.impact-lbl{font-size:7px;color:var(--muted);letter-spacing:1px;margin-bottom:2px;}
+.event-row{padding:4px 9px;border-radius:2px;font-size:8px;display:flex;gap:9px;align-items:baseline;margin-bottom:2px;animation:fadeIn .3s ease;}
+.ev-time{font-size:7px;color:var(--muted);min-width:52px;flex-shrink:0;}
+.ev-level{font-size:7px;font-weight:bold;letter-spacing:1px;min-width:46px;flex-shrink:0;}
+.ev-msg{color:var(--text);}
+.ev-info{background:#00e5ff07;border-left:2px solid var(--muted);}
+.ev-ok{background:#2ed57310;border-left:2px solid var(--green);}
+.ev-warn{background:#ffa50210;border-left:2px solid var(--yellow);}
+.ev-critical{background:#ff475710;border-left:2px solid var(--red);}
+.ev-cdx{background:#39ff9a10;border-left:2px solid var(--cdx2);}
+.risk-row{padding:6px 10px;border-radius:2px;font-size:8px;margin-bottom:4px;display:flex;gap:8px;align-items:flex-start;}
+.risk-msg{color:var(--text);}
+.risk-rec{font-size:7px;color:var(--muted);margin-top:2px;}
+
+/* SETUPS */
+.setup-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;}
+.setup-card{background:var(--bg3);border:1px solid var(--border);border-radius:5px;padding:14px;cursor:pointer;transition:all .2s;position:relative;overflow:hidden;}
+.setup-card:hover{border-color:#00e5ff44;background:#0d1e2c;}
+.setup-card.active-setup{border-color:#39ff9a66;background:#0a1a10;}
+.setup-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;}
+.setup-card.trad::before{background:linear-gradient(90deg,#ff6b35,#ff4757);}
+.setup-card.gpu-inf::before{background:linear-gradient(90deg,#fd79a8,#a855f7);}
+.setup-card.hybrid::before{background:linear-gradient(90deg,#f7d060,#74b9ff);}
+.setup-card.cdx::before{background:linear-gradient(90deg,#39ff9a,#00e5ff);}
+.setup-name{font-family:'Orbitron',sans-serif;font-size:11px;font-weight:700;margin-bottom:3px;}
+.setup-sub{font-size:8px;color:var(--muted);margin-bottom:10px;line-height:1.6;}
+.setup-pills{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px;}
+.pill{padding:1px 7px;border-radius:10px;font-size:7px;letter-spacing:1px;border:1px solid;}
+.setup-mini-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;}
+.mini-stat-lbl{font-size:7px;color:var(--muted);letter-spacing:1px;}
+.mini-stat-val{font-family:'Orbitron',sans-serif;font-size:11px;font-weight:700;margin-top:2px;}
+.load-btn{margin-top:10px;width:100%;padding:5px;font-size:8px;letter-spacing:2px;border-radius:2px;cursor:pointer;font-family:'Share Tech Mono',monospace;transition:all .2s;border:1px solid;}
+.active-badge{position:absolute;top:10px;right:10px;font-size:7px;letter-spacing:1px;padding:2px 7px;border-radius:10px;background:#39ff9a22;color:#39ff9a;border:1px solid #39ff9a44;}
+.plex-section{background:linear-gradient(135deg,#060e0a,#071408);border:1px solid #39ff9a22;border-radius:5px;padding:14px;margin-top:2px;}
+.plex-title{font-family:'Orbitron',sans-serif;font-size:10px;color:#39ff9a;letter-spacing:2px;margin-bottom:10px;display:flex;align-items:center;gap:8px;}
+.pulse-anim{display:flex;align-items:flex-end;gap:2px;height:24px;}
+.pulse-bar{width:4px;border-radius:1px;background:#39ff9a;animation:pulseBars 1.4s ease-in-out infinite;}
+.pipe-stage{background:#091510;border:1px solid #39ff9a22;border-radius:3px;padding:8px;text-align:center;}
+.pipe-stage-title{font-size:7px;color:#39ff9a;letter-spacing:1px;margin-bottom:4px;}
+.pipe-stage-val{font-family:'Orbitron',sans-serif;font-size:13px;color:#fff;font-weight:700;}
+.pipe-stage-sub{font-size:7px;color:var(--muted);margin-top:2px;}
+.eu-flow{display:flex;align-items:center;gap:4px;flex-wrap:wrap;margin-top:8px;}
+.eu-box{padding:3px 8px;border-radius:2px;font-size:7px;letter-spacing:1px;border:1px solid;white-space:nowrap;}
+
+/* COMPARE */
+.cmp-header-row{display:grid;grid-template-columns:130px repeat(5,1fr);gap:4px;margin-bottom:4px;}
+.cmp-col-head{text-align:center;padding:7px 5px;border-radius:3px;font-size:7px;letter-spacing:1px;font-family:'Orbitron',sans-serif;font-weight:700;}
+.cmp-section-label{font-size:7px;color:var(--muted);letter-spacing:2px;padding:5px 0 3px;border-bottom:1px solid var(--border);margin-bottom:2px;}
+.cmp-row{display:grid;grid-template-columns:130px repeat(5,1fr);gap:4px;margin-bottom:3px;align-items:center;}
+.cmp-row-label{font-size:7px;color:var(--muted2);padding:3px 0;}
+.cmp-cell{text-align:center;padding:4px 3px;border-radius:2px;background:var(--bg4);border:1px solid var(--border);}
+.cmp-val{font-family:'Orbitron',sans-serif;font-size:9px;font-weight:700;}
+.cmp-val.best{color:#39ff9a;}
+.cmp-val.worst{color:#ff475799;}
+.cmp-val.mid{color:#ffa502;}
+.cmp-val.ok{color:var(--cyan);}
+.cmp-val.yes{color:#39ff9a;}
+.cmp-val.no{color:#ff475766;}
+.cmp-val.partial{color:#ffa502;}
+.cmp-sub{font-size:6px;color:var(--muted);margin-top:1px;}
+.win-badge{font-size:6px;background:#39ff9a12;color:#39ff9a;border:1px solid #39ff9a33;padding:1px 4px;border-radius:8px;display:inline-block;margin-top:2px;}
+.cmp-chart-wrap{background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:10px;}
+.bar-compare{display:flex;flex-direction:column;gap:5px;}
+.bar-compare-row{display:flex;align-items:center;gap:7px;}
+.bar-compare-label{font-size:7px;color:var(--muted2);width:110px;flex-shrink:0;text-align:right;}
+.bar-compare-track{flex:1;height:14px;background:#0d1520;border-radius:2px;overflow:hidden;position:relative;}
+.bar-compare-fill{height:100%;border-radius:2px;transition:width 1s ease;display:flex;align-items:center;padding-left:5px;}
+.bar-compare-text{font-size:8px;color:#fff;font-family:'Share Tech Mono',monospace;white-space:nowrap;}
+.lat-row{display:flex;align-items:center;gap:6px;margin-bottom:2px;}
+.lat-label{font-size:7px;color:var(--muted);width:28px;flex-shrink:0;}
+.lat-track{flex:1;height:7px;background:#0d1520;border-radius:1px;overflow:hidden;}
+.lat-fill{height:100%;border-radius:1px;}
+.setup-card.scmp::before{background:linear-gradient(90deg,#b48eff,#00e5ff);}
+.ev-scmp{background:#b48eff10;border-left:2px solid #b48eff;}
+.scmp-glow{box-shadow:0 0 6px #b48eff44;}
+.scmp-section{background:linear-gradient(135deg,#0a0814,#080b18);border:1px solid #b48eff22;border-radius:5px;padding:14px;margin-top:2px;}
+.scmp-title{font-family:'Orbitron',sans-serif;font-size:10px;color:#b48eff;letter-spacing:2px;margin-bottom:10px;display:flex;align-items:center;gap:8px;}
+.ipfs-node{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:2px;font-size:7px;letter-spacing:1px;background:#b48eff18;border:1px solid #b48eff44;color:#b48eff;margin:2px;}
+.shard-track{flex:1;height:5px;background:#0d1520;border-radius:1px;overflow:hidden;margin-top:2px;}
+.shard-fill{height:100%;border-radius:1px;background:linear-gradient(90deg,#b48eff,#00e5ff);transition:width 1s ease;}
+
+@keyframes fadeIn{from{opacity:0;transform:translateY(-3px);}to{opacity:1;transform:translateY(0);}}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.3;}}
+@keyframes pulseBars{0%,100%{height:4px;opacity:.4;}50%{height:22px;opacity:1;}}
+.blink{animation:pulse 1.2s infinite;}
+.crit-glow{box-shadow:0 0 8px #ff475766;animation:pulse 1s infinite;}
+.cdx-glow{box-shadow:0 0 6px #39ff9a44;}
+#main::before{content:'';position:fixed;top:0;left:0;right:0;bottom:0;pointer-events:none;z-index:100;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.025) 2px,rgba(0,0,0,.025) 4px);}
+</style>
+</head>
+<body>
+
+<div id="header">
+  <div id="logo">⬡ DataCore<span> OS</span></div>
+  <div id="subtitle">DIGITAL TWIN · CDX v2 EDITION</div>
+  <div id="header-right">
+    <div style="display:flex;align-items:center;gap:4px;"><span class="sc-label">SCENARIO:</span><span id="scenarios-wrap" style="display:flex;gap:3px;"></span></div>
+    <button id="sim-toggle" class="live">▶ LIVE</button>
+    <div style="display:flex;gap:12px;">
+      <div class="hstat"><div class="hstat-label">NODES</div><div class="hstat-val" id="h-nodes">0</div></div>
+      <div class="hstat"><div class="hstat-label">AVG CPU</div><div class="hstat-val" id="h-cpu">—</div></div>
+      <div class="hstat"><div class="hstat-label">POWER</div><div class="hstat-val" id="h-pwr">—</div></div>
+      <div class="hstat"><div class="hstat-label">SETUP</div><div class="hstat-val" id="h-setup" style="color:#39ff9a;font-size:9px;">CUSTOM</div></div>
+      <div class="hstat"><div class="hstat-label">ALERTS</div><div class="hstat-val" id="h-alerts">0</div></div>
+    </div>
+  </div>
+</div>
+
+<div id="main">
+  <div id="left">
+    <div id="left-header">
+      <span class="panel-title">FLOOR LAYOUT</span>
+      <span style="font-size:7px;color:var(--muted);">DRAG · CLICK</span>
+      <span id="placing-label" style="margin-left:auto;font-size:7px;background:#00e5ff1a;color:var(--cyan);padding:2px 6px;border-radius:2px;border:1px solid #00e5ff44;display:none;"></span>
+    </div>
+    <div id="palette"></div>
+    <div id="floor-wrap"><div id="grid"></div><div id="legend"></div></div>
+  </div>
+
+  <div id="right">
+    <div id="tabs">
+      <button class="tab-btn active" data-tab="monitor">📊 MONITOR</button>
+      <button class="tab-btn" data-tab="setups">🏗 SETUPS</button>
+      <button class="tab-btn" data-tab="compare">⚖ COMPARE</button>
+      <button class="tab-btn" data-tab="config">⚙ CONFIG</button>
+      <button class="tab-btn" data-tab="events">📋 EVENTS</button>
+      <button class="tab-btn" data-tab="capacity">📈 CAPACITY</button>
+      <div id="sel-label"></div>
+    </div>
+
+    <div id="tab-monitor" class="tab-content active">
+      <div class="g4" id="sparkline-cards"></div>
+      <div class="card" style="padding:0;overflow:hidden;">
+        <div style="padding:6px 11px;border-bottom:1px solid var(--border);font-size:8px;color:var(--cyan);letter-spacing:2px;">UNIT STATUS TABLE</div>
+        <div style="overflow:auto;max-height:240px;">
+          <table id="unit-table"><thead><tr><th>UNIT</th><th>TYPE</th><th>STATUS</th><th>CPU%</th><th>RAM%</th><th>°C</th><th>PWR</th><th>NET</th></tr></thead><tbody id="unit-tbody"></tbody></table>
+        </div>
+      </div>
+      <div id="detail-panel" style="display:none;"></div>
+    </div>
+
+    <div id="tab-setups" class="tab-content">
+      <div style="font-size:8px;color:var(--muted);letter-spacing:2px;">SELECT A PRE-BUILT CONFIGURATION — LOADS FLOOR LAYOUT AND BENCHMARKS</div>
+      <div class="setup-grid" id="setup-grid"></div>
+      <div id="plex-detail" style="display:none;"></div>
+      <div id="scmp-detail" style="display:none;"></div>
+    </div>
+
+    <div id="tab-compare" class="tab-content">
+      <div style="font-size:8px;color:var(--muted);letter-spacing:2px;">SIDE-BY-SIDE BENCHMARK COMPARISON — ALL FIVE ARCHITECTURES</div>
+      <div id="compare-table"></div>
+      <div class="g2" id="compare-charts"></div>
+    </div>
+
+    <div id="tab-config" class="tab-content" style="flex-direction:row;gap:10px;">
+      <div id="config-list"></div>
+      <div id="config-panel"><div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:10px;color:var(--muted);letter-spacing:2px;">← SELECT A UNIT</div></div>
+    </div>
+
+    <div id="tab-events" class="tab-content">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <div style="font-size:8px;color:var(--muted);letter-spacing:2px;" id="ev-count">EVENT LOG</div>
+        <button id="btn-clear" style="font-size:7px;color:var(--red);background:transparent;border:1px solid #ff475744;padding:2px 8px;border-radius:2px;cursor:pointer;font-family:'Share Tech Mono',monospace;letter-spacing:1px;">CLEAR</button>
+      </div>
+      <div id="event-list" style="display:flex;flex-direction:column;"></div>
+    </div>
+
+    <div id="tab-capacity" class="tab-content">
+      <div class="g3" id="cap-stats"></div>
+      <div class="g2">
+        <div class="card"><div class="card-title">POWER CONSUMPTION (kW)</div><canvas id="chart-pwr" height="150"></canvas></div>
+        <div class="card"><div class="card-title">CPU UTILIZATION (%)</div><canvas id="chart-cpu" height="150"></canvas></div>
+      </div>
+      <div class="card" id="risk-panel"><div style="font-size:8px;color:var(--yellow);letter-spacing:2px;margin-bottom:8px;">⚠ RISK ASSESSMENT</div><div id="risk-list"></div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const GRID_COLS=12,GRID_ROWS=8;
+const UNIT_TYPES={
+  rack:{label:"Server Rack",icon:"▣",color:"#00e5ff",power:8,cpu:100,ram:256,heat:3},
+  gpu:{label:"GPU Cluster",icon:"⬡",color:"#ff6b35",power:20,cpu:64,ram:512,heat:8},
+  storage:{label:"Storage Array",icon:"◫",color:"#a8ff78",power:4,cpu:8,ram:64,heat:1},
+  network:{label:"Net Switch",icon:"⬡",color:"#f7d060",power:2,cpu:0,ram:0,heat:1},
+  cooling:{label:"Cooling Unit",icon:"❄",color:"#74b9ff",power:6,cpu:0,ram:0,heat:-12},
+  power:{label:"Power UPS",icon:"⚡",color:"#fd79a8",power:0,cpu:0,ram:0,heat:0},
+};
+const SCENARIOS=[
+  {id:"normal",label:"Normal",load:.45,variance:.08},
+  {id:"peak",label:"Peak",load:.88,variance:.06},
+  {id:"stress",label:"Stress",load:.97,variance:.02},
+  {id:"failover",label:"Failover",load:.72,variance:.15},
+  {id:"idle",label:"Maint.",load:.12,variance:.04},
+];
+const SETUPS={
+  traditional:{id:"traditional",name:"Traditional HPC Stack",cssClass:"trad",color:"#ff6b35",
+    sub:"Spark/Ray-style centralized scheduler. GPU-heavy with high raw throughput. Non-deterministic, thermally reactive. Severe tail latency under load.",
+    pills:[{t:"Spark/Ray",bg:"#ff6b3520",b:"#ff6b3555",c:"#ff6b35"},{t:"GPU-Heavy",bg:"#fd79a820",b:"#fd79a855",c:"#fd79a8"},{t:"Non-Deterministic",bg:"#ff475720",b:"#ff475755",c:"#ff4757"},{t:"High Power",bg:"#ffa50220",b:"#ffa50255",c:"#ffa502"}],
+    units:[[2,1,"rack"],[4,1,"rack"],[6,1,"rack"],[8,1,"rack"],[10,1,"rack"],[2,3,"gpu"],[4,3,"gpu"],[6,3,"gpu"],[8,3,"gpu"],[3,5,"network"],[8,5,"network"],[1,7,"cooling"],[11,7,"cooling"],[5,7,"storage"]],
+    miniStats:[{label:"THROUGHPUT",value:"18,400",unit:"ops/s"},{label:"POWER",value:"285",unit:"kW"},{label:"P99 LAT",value:"890",unit:"ms"}],
+    benchmarks:{throughput:18400,p50:12,p95:145,p99:890,power:285,pue:1.85,waterLhr:420,coolingOH:38,deterministic:false,explainable:false,replayable:"partial",costHr:38.20,thermal:"reactive"}
+  },
+  gpu_cluster:{id:"gpu_cluster",name:"GPU Inference Cluster",cssClass:"gpu-inf",color:"#fd79a8",
+    sub:"Maximum GPU density for ML inference. Highest raw throughput but extreme power draw and unpredictable latency under thermal throttling.",
+    pills:[{t:"GPU Inference",bg:"#fd79a820",b:"#fd79a855",c:"#fd79a8"},{t:"Max Throughput",bg:"#a855f720",b:"#a855f755",c:"#a855f7"},{t:"Non-Deterministic",bg:"#ff475720",b:"#ff475755",c:"#ff4757"},{t:"480kW Draw",bg:"#ffa50220",b:"#ffa50255",c:"#ffa502"}],
+    units:[[1,1,"gpu"],[3,1,"gpu"],[5,1,"gpu"],[7,1,"gpu"],[9,1,"gpu"],[11,1,"gpu"],[1,3,"gpu"],[3,3,"gpu"],[5,3,"gpu"],[7,3,"gpu"],[2,5,"rack"],[8,5,"rack"],[4,5,"network"],[9,5,"network"],[1,7,"cooling"],[6,7,"cooling"],[11,7,"cooling"],[4,7,"power"]],
+    miniStats:[{label:"THROUGHPUT",value:"31,200",unit:"ops/s"},{label:"POWER",value:"480",unit:"kW"},{label:"P99 LAT",value:"1,840",unit:"ms"}],
+    benchmarks:{throughput:31200,p50:8,p95:220,p99:1840,power:480,pue:1.95,waterLhr:680,coolingOH:52,deterministic:false,explainable:false,replayable:"no",costHr:64.50,thermal:"reactive"}
+  },
+  hybrid:{id:"hybrid",name:"Hybrid Cloud (Mixed)",cssClass:"hybrid",color:"#f7d060",
+    sub:"Balanced mix of compute types for diverse workloads. Good flexibility and moderate efficiency. Moderate latency but still lacks determinism.",
+    pills:[{t:"Balanced Mix",bg:"#f7d06020",b:"#f7d06055",c:"#f7d060"},{t:"Flexible",bg:"#74b9ff20",b:"#74b9ff55",c:"#74b9ff"},{t:"Non-Deterministic",bg:"#ff475720",b:"#ff475755",c:"#ff4757"},{t:"Moderate PUE",bg:"#a8ff7820",b:"#a8ff7855",c:"#a8ff78"}],
+    units:[[2,1,"rack"],[4,1,"rack"],[6,1,"rack"],[8,1,"rack"],[2,3,"gpu"],[5,3,"gpu"],[8,3,"gpu"],[1,5,"storage"],[4,5,"storage"],[7,5,"storage"],[3,5,"network"],[9,5,"network"],[1,7,"cooling"],[6,7,"cooling"],[10,7,"power"]],
+    miniStats:[{label:"THROUGHPUT",value:"14,800",unit:"ops/s"},{label:"POWER",value:"210",unit:"kW"},{label:"P99 LAT",value:"430",unit:"ms"}],
+    benchmarks:{throughput:14800,p50:18,p95:98,p99:430,power:210,pue:1.72,waterLhr:310,coolingOH:29,deterministic:false,explainable:false,replayable:"partial",costHr:28.80,thermal:"reactive"}
+  },
+  cdx2:{id:"cdx2",name:"CDX v2 / PLEX Runtime™",cssClass:"cdx",color:"#39ff9a",
+    sub:"Coherent Data eXecution v2. CPU-first, thermally-aware, deterministic pulsed execution. Hybrid BM25+Dense search. Flat tail latency. Lowest power and water usage.",
+    pills:[{t:"CDX v2",bg:"#39ff9a20",b:"#39ff9a55",c:"#39ff9a"},{t:"Deterministic",bg:"#2ed57320",b:"#2ed57355",c:"#2ed573"},{t:"CPU-First",bg:"#00e5ff20",b:"#00e5ff55",c:"#00e5ff"},{t:"Thermal-Aware",bg:"#74b9ff20",b:"#74b9ff55",c:"#74b9ff"},{t:"Explainable",bg:"#a8ff7820",b:"#a8ff7855",c:"#a8ff78"}],
+    units:[[2,1,"rack"],[4,1,"rack"],[6,1,"rack"],[8,1,"rack"],[2,3,"rack"],[4,3,"rack"],[6,3,"rack"],[8,3,"rack"],[1,5,"cooling"],[5,5,"cooling"],[10,5,"cooling"],[3,5,"power"],[8,5,"power"],[3,7,"network"],[7,7,"network"],[10,7,"storage"]],
+    miniStats:[{label:"THROUGHPUT",value:"12,600",unit:"ops/s"},{label:"POWER",value:"142",unit:"kW"},{label:"P99 LAT",value:"8",unit:"ms"}],
+    benchmarks:{throughput:12600,p50:4,p95:6,p99:8,power:142,pue:1.18,waterLhr:95,coolingOH:11,deterministic:true,explainable:true,replayable:"yes",costHr:19.40,thermal:"predictive"}
+  },
+
+  scmp:{id:"scmp",name:"SCMP Decentralized",cssClass:"scmp",color:"#b48eff",
+    sub:"No cloud. No central server. IPFS-native peer-to-peer storage. AES-256 encrypted, auto-sharded to 256KB. Capability tokens (HMAC-SHA256) enforce who sees what, how many times, for how long. Immutable audit ledger on IPFS. You own your data.",
+    pills:[{t:"IPFS / Helia",bg:"#b48eff20",b:"#b48eff55",c:"#b48eff"},{t:"AES-256",bg:"#00e5ff20",b:"#00e5ff55",c:"#00e5ff"},{t:"Sharded",bg:"#a8ff7820",b:"#a8ff7855",c:"#a8ff78"},{t:"Cap Tokens",bg:"#f7d06020",b:"#f7d06055",c:"#f7d060"},{t:"Zero-Trust",bg:"#fd79a820",b:"#fd79a855",c:"#fd79a8"},{t:"Audit Ledger",bg:"#39ff9a20",b:"#39ff9a55",c:"#39ff9a"}],
+    units:[
+      [2,1,"storage"],[4,1,"storage"],[6,1,"storage"],[8,1,"storage"],[10,1,"storage"],
+      [2,3,"rack"],[4,3,"rack"],[6,3,"rack"],[8,3,"rack"],
+      [3,5,"network"],[7,5,"network"],[11,5,"network"],
+      [1,7,"storage"],[5,7,"storage"],[9,7,"storage"],
+      [11,3,"power"],[11,7,"power"],
+      [1,1,"cooling"],[1,3,"cooling"],
+    ],
+    miniStats:[{label:"THROUGHPUT",value:"8,200",unit:"ops/s"},{label:"POWER",value:"38",unit:"kW"},{label:"P99 LAT",value:"320",unit:"ms"}],
+    benchmarks:{throughput:8200,p50:3,p95:185,p99:320,power:38,pue:1.08,waterLhr:28,coolingOH:6,deterministic:true,explainable:true,replayable:"yes",costHr:8.40,thermal:"predictive",
+      ipfsNodes:8,shardSize:256,encAlgo:"AES-256",tokenAlgo:"HMAC-SHA256",ledgerType:"IPFS append-only"}
+  }
+};
+
+let units=[],metrics={},selectedId=null,placingType=null;
+let simRunning=true,scenario=SCENARIOS[0],simInterval=null;
+let events=[],dragId=null,sparkCtx={};
+let activeSetup="custom";
+let sparkData={cpu:[],ram:[],net:[],pwr:[]};
+
+function uid(){return Math.random().toString(36).slice(2,8);}
+function clamp(v,a,b){return Math.min(b,Math.max(a,v));}
+function statusColor(s){return s==="critical"?"#ff4757":s==="warn"?"#ffa502":"#2ed573";}
+function barColor(v){return v>90?"#ff4757":v>75?"#ffa502":"#00e5ff";}
+function timeAgo(ts){const s=Math.floor((Date.now()-ts)/1000);return s<60?s+"s ago":Math.floor(s/60)+"m ago";}
+function addEvent(level,msg){events.push({ts:Date.now(),level,msg});if(events.length>80)events.shift();}
+
+for(let i=0;i<30;i++){sparkData.cpu.push({v:45+Math.random()*15});sparkData.ram.push({v:60+Math.random()*10});sparkData.net.push({v:30+Math.random()*20});sparkData.pwr.push({v:25+Math.random()*15});}
+
+function initUnits(preset){
+  units=[];
+  const seed=preset?SETUPS[preset].units:[[2,1,"rack"],[4,1,"rack"],[6,1,"rack"],[8,1,"rack"],[2,3,"gpu"],[5,3,"storage"],[8,3,"network"],[1,5,"cooling"],[6,5,"power"],[10,5,"cooling"]];
+  seed.forEach(([c,r,t])=>units.push({id:uid(),col:c,row:r,type:t,name:UNIT_TYPES[t].label+" "+(units.length+1),config:{cores:32,ramGb:256,storTb:10,redundancy:"N+1",tier:3}}));
+}
+
+function buildScenarios(){
+  const wrap=document.getElementById("scenarios-wrap");wrap.innerHTML="";
+  SCENARIOS.forEach(sc=>{
+    const b=document.createElement("button");b.className="sc-btn"+(sc.id===scenario.id?" active":"");b.textContent=sc.label.toUpperCase();
+    b.onclick=()=>{scenario=sc;document.querySelectorAll(".sc-btn").forEach(x=>x.classList.remove("active"));b.classList.add("active");addEvent("info","Scenario: "+sc.label);renderEvents();};
+    wrap.appendChild(b);
+  });
+}
+
+function buildPalette(){
+  const pal=document.getElementById("palette");pal.innerHTML="";
+  Object.entries(UNIT_TYPES).forEach(([k,v])=>{
+    const b=document.createElement("button");b.className="pal-btn"+(placingType===k?" active":"");
+    if(placingType===k){b.style.borderColor=v.color+"88";b.style.color=v.color;b.style.background=v.color+"22";}
+    b.textContent=v.icon+" "+v.label.split(" ")[0].toUpperCase();
+    b.onclick=()=>{
+      placingType=placingType===k?null:k;buildPalette();
+      const lbl=document.getElementById("placing-label");
+      if(placingType){lbl.textContent="PLACING: "+UNIT_TYPES[placingType].label.toUpperCase()+" — click grid";lbl.style.display="inline";}
+      else lbl.style.display="none";
+      renderGrid();
+    };
+    pal.appendChild(b);
+  });
+}
+
+function renderGrid(){
+  const grid=document.getElementById("grid");grid.innerHTML="";
+  for(let r=1;r<=GRID_ROWS;r++){
+    for(let c=1;c<=GRID_COLS;c++){
+      const unit=units.find(u=>u.col===c&&u.row===r);
+      const cell=document.createElement("div");
+      cell.className="cell"+(unit?" occupied":"")+(placingType&&!unit?" placing":"")+(unit&&unit.id===selectedId?" selected":"");
+      cell.dataset.col=c;cell.dataset.row=r;
+      if(unit){
+        cell.dataset.uid=unit.id;
+        const ut=UNIT_TYPES[unit.type];const m=metrics[unit.id];
+        cell.style.borderColor=unit.id===selectedId?ut.color+"88":ut.color+"33";
+        cell.style.background=unit.id===selectedId?ut.color+"18":"#0d1520";
+        if(m&&m.status==="critical")cell.classList.add("crit-glow");
+        if(unit.type==="rack"&&activeSetup==="cdx2")cell.classList.add("cdx-glow");
+        if(unit.type==="storage"&&activeSetup==="scmp")cell.classList.add("scmp-glow");
+        const icon=document.createElement("div");icon.className="unit-icon";icon.style.color=ut.color;icon.textContent=ut.icon;cell.appendChild(icon);
+        if(m){
+          const bw=document.createElement("div");bw.className="unit-bar-wrap";
+          const bf=document.createElement("div");bf.className="unit-bar";
+          const pct=Math.min(100,m.cpu||m.pwr*6||0);bf.style.width=pct+"%";bf.style.background=barColor(pct);
+          bw.appendChild(bf);cell.appendChild(bw);
+          const dot=document.createElement("div");dot.className="unit-dot";dot.style.color=statusColor(m.status);dot.textContent=m.status==="critical"?"●":m.status==="warn"?"◐":"○";cell.appendChild(dot);
+        }
+        cell.draggable=true;
+        cell.addEventListener("dragstart",e=>{dragId=unit.id;e.dataTransfer.effectAllowed="move";});
+      } else {if(r===1)cell.textContent=c;if(c===1&&r>1)cell.textContent=r;}
+      cell.addEventListener("dragover",e=>{e.preventDefault();cell.classList.add("draghover");});
+      cell.addEventListener("dragleave",()=>cell.classList.remove("draghover"));
+      cell.addEventListener("drop",e=>{
+        e.preventDefault();cell.classList.remove("draghover");if(!dragId)return;
+        const tc=+cell.dataset.col,tr=+cell.dataset.row;
+        if(!units.some(u=>u.col===tc&&u.row===tr&&u.id!==dragId)){const u=units.find(x=>x.id===dragId);if(u){u.col=tc;u.row=tr;}renderGrid();}
+        dragId=null;
+      });
+      cell.addEventListener("click",()=>{
+        if(placingType){
+          if(!units.some(u=>u.col===c&&u.row===r)){
+            const nu={id:uid(),col:c,row:r,type:placingType,name:UNIT_TYPES[placingType].label+" "+(units.length+1),config:{cores:32,ramGb:256,storTb:10,redundancy:"N+1",tier:3}};
+            units.push(nu);activeSetup="custom";addEvent("ok","Deployed: "+nu.name+" at ["+c+","+r+"]");renderEvents();updateHeader();
+          }
+          placingType=null;buildPalette();document.getElementById("placing-label").style.display="none";renderGrid();renderConfigList();return;
+        }
+        const u=units.find(x=>x.col===c&&x.row===r);selectedId=u?u.id:null;
+        renderGrid();renderDetail();renderConfigList();updateSelLabel();
+      });
+      grid.appendChild(cell);
+    }
+  }
+  const lg=document.getElementById("legend");lg.innerHTML="";
+  Object.entries(UNIT_TYPES).forEach(([k,v])=>{const d=document.createElement("div");d.className="leg-item";d.innerHTML=`<span style="color:${v.color}">${v.icon}</span> ${v.label}`;lg.appendChild(d);});
+}
+
+function tick(){
+  const nm={};const isCDX=activeSetup==="cdx2";const isSCMP=activeSetup==="scmp";
+  const variance=isCDX?scenario.variance*0.2:isSCMP?scenario.variance*0.35:scenario.variance;
+  const lm=isCDX?.82:isSCMP?.52:1.0;
+  units.forEach(u=>{
+    const base=UNIT_TYPES[u.type];
+    const load=clamp(scenario.load*lm+(Math.random()-.5)*variance,.01,.99);
+    nm[u.id]={cpu:base.cpu>0?+(load*(0.8+Math.random()*0.3)*100).toFixed(1):0,ram:base.ram>0?+((0.4+load*0.5)*100).toFixed(1):0,net:+(load*85*(0.5+Math.random())).toFixed(1),temp:+(35+base.heat*load*4+Math.random()*(isCDX||isSCMP?1.2:3)).toFixed(1),pwr:+(base.power*(0.3+load*0.7)).toFixed(1),load:+(load*100).toFixed(1),status:load>.93?"critical":load>.78?"warn":"ok"};
+  });
+  metrics=nm;
+  const cv=Object.values(metrics).filter(m=>m.cpu>0).map(m=>m.cpu);
+  const avgC=cv.length?cv.reduce((a,b)=>a+b,0)/cv.length:0;
+  const avgR=Object.values(metrics).filter(m=>m.ram>0).map(m=>m.ram).reduce((a,b,_,ar)=>a+b/ar.length,0)||0;
+  const avgN=Object.values(metrics).map(m=>m.net).reduce((a,b,_,ar)=>a+b/ar.length,0)||0;
+  const totP=Object.values(metrics).reduce((a,m)=>a+m.pwr,0);
+  const n=sparkData.cpu.length;
+  [{key:"cpu",v:avgC},{key:"ram",v:avgR},{key:"net",v:avgN},{key:"pwr",v:totP}].forEach(({key,v})=>{sparkData[key].push({v:+v.toFixed(1)});if(sparkData[key].length>40)sparkData[key].shift();});
+  if(Math.random()<.06){const crits=Object.entries(metrics).filter(([,m])=>m.status==="critical");if(crits.length){const [id]=crits[Math.floor(Math.random()*crits.length)];const u=units.find(x=>x.id===id);addEvent("critical",(u?.name||"Unit")+" CPU at "+(metrics[id]?.cpu)+"% — limit approached");}}
+  else if(Math.random()<.04){
+    if(isCDX)addEvent("cdx","PLEX pulse complete — thermal debt: "+(Math.random()*2).toFixed(2)+"°C · EU batch: deterministic ✓");
+    else if(isSCMP){
+      const evts=["IPFS shard verified — CID: Qm"+Math.random().toString(36).slice(2,10)+" integrity ✓","Capability token validated — HMAC-SHA256 OK · views remaining: "+Math.floor(Math.random()*8+1),"Audit ledger entry appended — CID: Qm"+Math.random().toString(36).slice(2,10),"AES-256 decrypt complete — "+(Math.floor(Math.random()*3+1))+" shards reassembled","AccessPolicy enforced — grantedTo: peer_"+Math.random().toString(36).slice(2,6)+" · maxViews: "+Math.floor(Math.random()*5+1)];
+      addEvent("scmp",evts[Math.floor(Math.random()*evts.length)]);
+    }
+    else addEvent("info","Auto-scale check: "+(scenario.load*100).toFixed(0)+"% utilization");
+  }
+  updateHeader();renderGrid();renderTable();renderDetail();renderSparklines();renderEvents();
+  if(isCDX&&document.getElementById("tab-setups").classList.contains("active"))renderPlexDetail();
+  if(isSCMP&&document.getElementById("tab-setups").classList.contains("active"))renderSCMPDetail();
+}
+
+function startSim(){if(simInterval)clearInterval(simInterval);simInterval=setInterval(tick,1200);}
+function stopSim(){clearInterval(simInterval);simInterval=null;}
+
+function updateHeader(){
+  document.getElementById("h-nodes").textContent=units.length;
+  const cv=Object.values(metrics).filter(m=>m.cpu>0).map(m=>m.cpu);
+  document.getElementById("h-cpu").textContent=(cv.length?(cv.reduce((a,b)=>a+b,0)/cv.length).toFixed(1):0)+"%";
+  document.getElementById("h-pwr").textContent=Object.values(metrics).reduce((a,m)=>a+m.pwr,0).toFixed(1)+"kW";
+  const crits=Object.values(metrics).filter(m=>m.status==="critical").length,warns=Object.values(metrics).filter(m=>m.status==="warn").length;
+  const ae=document.getElementById("h-alerts");ae.textContent=crits+warns;ae.style.color=crits>0?"#ff4757":warns>0?"#ffa502":"#2ed573";
+  const se=document.getElementById("h-setup");
+  if(activeSetup==="custom"){se.textContent="CUSTOM";se.style.color="#f7d060";}
+  else{const nm={traditional:"TRAD HPC",gpu_cluster:"GPU INF",hybrid:"HYBRID",cdx2:"CDX v2",scmp:"SCMP"};se.textContent=nm[activeSetup]||activeSetup.toUpperCase();se.style.color=SETUPS[activeSetup]?.color||"#39ff9a";}
+}
+
+function updateSelLabel(){
+  const el=document.getElementById("sel-label");if(!selectedId){el.textContent="";return;}
+  const u=units.find(x=>x.id===selectedId);if(!u){el.textContent="";return;}
+  el.innerHTML="SEL: <span style='color:"+UNIT_TYPES[u.type].color+"'>"+u.name+"</span>";
+}
+
+function initSparklines(){
+  const defs=[{key:"cpu",label:"AVG CPU %",color:"#00e5ff",unit:"%"},{key:"ram",label:"AVG MEM %",color:"#a8ff78",unit:"%"},{key:"net",label:"AVG NET Mbps",color:"#f7d060",unit:"Mb"},{key:"pwr",label:"TOTAL PWR kW",color:"#fd79a8",unit:"kW"}];
+  const wrap=document.getElementById("sparkline-cards");wrap.innerHTML="";
+  defs.forEach(({key,label,color,unit})=>{
+    const card=document.createElement("div");card.className="stat-card";
+    card.innerHTML=`<div class="stat-label">${label}</div><div class="stat-val" id="sp-val-${key}" style="color:${color}">—<span style="font-size:8px;color:var(--muted);margin-left:2px;">${unit}</span></div><canvas id="sp-${key}" height="44"></canvas>`;
+    wrap.appendChild(card);
+    setTimeout(()=>{const cv=document.getElementById("sp-"+key);cv.width=cv.offsetWidth||180;sparkCtx[key]={canvas:cv,color};},60);
+  });
+}
+
+function renderSparklines(){
+  ["cpu","ram","net","pwr"].forEach(key=>{
+    const ctx=sparkCtx[key];if(!ctx)return;
+    const{canvas,color}=ctx;canvas.width=canvas.offsetWidth||180;
+    const c=canvas.getContext("2d"),data=sparkData[key];if(!data.length)return;
+    const W=canvas.width,H=canvas.height,vals=data.map(d=>d.v);
+    const mn=Math.min(...vals),mx=Math.max(...vals)||1,pad=4;
+    const sy=v=>H-pad-(v-mn)/(mx-mn||1)*(H-pad*2);
+    const sx=(_,i)=>(i/(data.length-1||1))*(W-1);
+    c.clearRect(0,0,W,H);
+    c.beginPath();c.moveTo(sx(null,0),H);vals.forEach((v,i)=>c.lineTo(sx(null,i),sy(v)));c.lineTo(W,H);c.closePath();
+    const g=c.createLinearGradient(0,0,0,H);g.addColorStop(0,color+"44");g.addColorStop(1,color+"00");c.fillStyle=g;c.fill();
+    c.beginPath();vals.forEach((v,i)=>i===0?c.moveTo(sx(null,i),sy(v)):c.lineTo(sx(null,i),sy(v)));c.strokeStyle=color;c.lineWidth=1.5;c.stroke();
+    const last=vals[vals.length-1]||0;const el=document.getElementById("sp-val-"+key);if(el)el.childNodes[0].textContent=last.toFixed(1);
+  });
+}
+
+function renderTable(){
+  const tbody=document.getElementById("unit-tbody");tbody.innerHTML="";
+  units.forEach(u=>{
+    const m=metrics[u.id]||{},ut=UNIT_TYPES[u.type];
+    const tr=document.createElement("tr");tr.className=u.id===selectedId?"row-sel":"";
+    tr.onclick=()=>{selectedId=u.id;renderGrid();renderDetail();renderConfigList();updateSelLabel();renderTable();};
+    const sc=m.status?statusColor(m.status):"var(--muted)";
+    const mkB=v=>{const p=Math.min(100,v||0);return`<div class="tbar-wrap"><div class="tbar"><div class="tbar-fill" style="width:${p}%;background:${barColor(p)}"></div></div><span>${v||"—"}</span></div>`;};
+    tr.innerHTML=`<td style="color:${ut.color}">${ut.icon} ${u.name}</td><td style="color:var(--muted2)">${ut.label}</td><td><span style="color:${sc};font-size:7px;">${m.status?m.status.toUpperCase():"—"}</span></td>${mkB(m.cpu)}${mkB(m.ram)}<td>${m.temp||"—"}</td>${mkB(m.pwr)}${mkB(m.net)}`;
+    tbody.appendChild(tr);
+  });
+}
+
+function renderDetail(){
+  const panel=document.getElementById("detail-panel");if(!selectedId){panel.style.display="none";return;}
+  const u=units.find(x=>x.id===selectedId),m=metrics[u?.id];if(!u||!m){panel.style.display="none";return;}
+  panel.style.display="block";const ut=UNIT_TYPES[u.type];
+  const fields=[["CPU LOAD",m.cpu+"%",m.cpu],["MEMORY",m.ram+"%",m.ram],["TEMP",m.temp+"°C",(m.temp-20)*2],["NETWORK",m.net+"Mb",m.net/1.5],["POWER",m.pwr+"kW",m.pwr*8],["LOAD",m.load+"%",m.load]];
+  panel.style.borderColor=ut.color+"33";
+  panel.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;"><span style="font-family:'Orbitron',sans-serif;font-size:11px;color:${ut.color}">${ut.icon} ${u.name}</span><span style="font-size:7px;color:${statusColor(m.status)};background:${statusColor(m.status)}22;padding:2px 7px;border-radius:2px;">${m.status.toUpperCase()}</span></div><div class="det-grid">${fields.map(([l,v,p])=>`<div class="det-cell"><div class="det-label">${l}</div><div class="det-val">${v}</div><div class="det-bar-wrap"><div class="det-bar" style="width:${clamp(p,0,100)}%;background:${barColor(p)}"></div></div></div>`).join("")}</div>`;
+}
+
+function renderConfigList(){
+  const list=document.getElementById("config-list");list.innerHTML="";
+  units.forEach(u=>{
+    const ut=UNIT_TYPES[u.type],m=metrics[u.id];
+    const div=document.createElement("div");div.className="cfg-unit"+(u.id===selectedId?" active":"");div.style.borderColor=u.id===selectedId?ut.color+"55":"";
+    div.innerHTML=`<div style="display:flex;align-items:center;gap:5px;"><span style="color:${ut.color}">${ut.icon}</span><div style="flex:1;min-width:0;"><div class="cfg-unit-name">${u.name}</div><div class="cfg-unit-sub">[${u.col},${u.row}]</div></div>${m?`<div class="cfg-dot" style="background:${statusColor(m.status)}"></div>`:""}</div>`;
+    div.onclick=()=>{selectedId=u.id;renderConfigList();renderConfigPanel();renderGrid();updateSelLabel();};
+    list.appendChild(div);
+  });
+}
+
+function renderConfigPanel(){
+  const panel=document.getElementById("config-panel");
+  if(!selectedId){panel.innerHTML=`<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:10px;color:var(--muted);letter-spacing:2px;">← SELECT A UNIT</div>`;return;}
+  const u=units.find(x=>x.id===selectedId);if(!u)return;const ut=UNIT_TYPES[u.type];
+  panel.innerHTML=`<div class="cfg-card" style="border:1px solid ${ut.color}33;"><div class="cfg-header"><div><div class="cfg-title" style="color:${ut.color}">${ut.icon} ${u.name}</div><div class="cfg-sub">${ut.label} · [${u.col},${u.row}]</div></div><button id="btn-remove">✕ REMOVE</button></div><div class="field-grid"><div class="field"><div class="field-label">CPU CORES</div><input type="number" id="cfg-cores" min="1" max="256" step="4" value="${u.config.cores}"></div><div class="field"><div class="field-label">RAM (GB)</div><input type="number" id="cfg-ram" min="8" max="2048" step="8" value="${u.config.ramGb}"></div><div class="field"><div class="field-label">STORAGE (TB)</div><input type="number" id="cfg-stor" min="1" max="500" step="1" value="${u.config.storTb}"></div><div class="field"><div class="field-label">REDUNDANCY</div><select id="cfg-red">${["N","N+1","2N","2N+1"].map(o=>`<option${o===u.config.redundancy?" selected":""}>${o}</option>`).join("")}</select></div><div class="field" style="grid-column:1/-1"><div class="field-label" style="display:flex;justify-content:space-between;"><span>TIER LEVEL</span><span class="range-val">Tier ${u.config.tier}</span></div><input type="range" id="cfg-tier" min="1" max="4" step="1" value="${u.config.tier}"><div class="range-labels"><span>1</span><span>4</span></div></div></div><div class="impact-card"><div class="impact-title">⚡ ESTIMATED IMPACT</div><div class="impact-grid" id="impact-grid">${impactHTML(u)}</div></div></div>`;
+  document.getElementById("btn-remove").onclick=()=>{const nm=u.name;units=units.filter(x=>x.id!==selectedId);delete metrics[selectedId];selectedId=null;activeSetup="custom";addEvent("warn","Removed: "+nm);renderGrid();renderTable();renderDetail();renderConfigList();renderConfigPanel();updateHeader();renderEvents();updateSelLabel();};
+  const live=()=>{u.config.cores=+document.getElementById("cfg-cores").value;u.config.ramGb=+document.getElementById("cfg-ram").value;u.config.storTb=+document.getElementById("cfg-stor").value;u.config.redundancy=document.getElementById("cfg-red").value;u.config.tier=+document.getElementById("cfg-tier").value;document.querySelector(".range-val").textContent="Tier "+u.config.tier;document.getElementById("impact-grid").innerHTML=impactHTML(u);};
+  ["cfg-cores","cfg-ram","cfg-stor","cfg-red","cfg-tier"].forEach(id=>{document.getElementById(id).addEventListener("input",live);document.getElementById(id).addEventListener("change",live);});
+}
+
+function impactHTML(u){
+  return[["Compute",(u.config.cores*2.4).toFixed(0)+" GHz"],["Mem BW",(u.config.ramGb*.8).toFixed(0)+" GB/s"],["IOPS",(u.config.storTb*1200).toLocaleString()],["Power Est.",(u.config.cores*.3+u.config.ramGb*.004).toFixed(1)+" kW"],["Cost/mo","$"+(u.config.cores*12+u.config.ramGb*.8).toFixed(0)],["SLA",u.config.redundancy==="2N+1"?"99.999%":u.config.redundancy==="2N"?"99.99%":u.config.redundancy==="N+1"?"99.9%":"99%"]]
+    .map(([l,v])=>`<div><div class="impact-lbl">${l.toUpperCase()}</div><div class="impact-val">${v}</div></div>`).join("");
+}
+
+function renderEvents(){
+  const list=document.getElementById("event-list");
+  document.getElementById("ev-count").textContent="EVENT LOG — "+events.length+" ENTRIES";
+  list.innerHTML="";
+  [...events].reverse().forEach(ev=>{
+    const d=document.createElement("div");
+    const lc=ev.level==="critical"?"#ff4757":ev.level==="warn"?"#ffa502":ev.level==="ok"?"#2ed573":ev.level==="cdx"?"#39ff9a":ev.level==="scmp"?"#b48eff":"#4a6278";
+    d.className="event-row ev-"+(["cdx","scmp"].includes(ev.level)?ev.level:ev.level);
+    d.innerHTML=`<span class="ev-time">${timeAgo(ev.ts)}</span><span class="ev-level" style="color:${lc}">${ev.level.toUpperCase()}</span><span class="ev-msg">${ev.msg}</span>`;
+    list.appendChild(d);
+  });
+}
+document.getElementById("btn-clear").onclick=()=>{events=[];renderEvents();};
+
+function renderCapacity(){
+  const totC=units.reduce((a,u)=>a+(UNIT_TYPES[u.type].cpu||0),0);
+  const totR=units.reduce((a,u)=>a+(UNIT_TYPES[u.type].ram||0),0);
+  const totP=units.reduce((a,u)=>a+(UNIT_TYPES[u.type].power||0),0);
+  const cool=units.filter(u=>u.type==="cooling").length,ups=units.filter(u=>u.type==="power").length;
+  const den=Math.round(units.length/(GRID_COLS*GRID_ROWS)*100);
+  const crits=Object.values(metrics).filter(m=>m.status==="critical").length;
+  const stats=[{label:"Total Compute",value:totC+" vCPUs",sub:(totC*2.4).toFixed(0)+" GHz",color:"#00e5ff"},{label:"Total Memory",value:totR+" GB",sub:(totR/1024).toFixed(1)+" TB",color:"#a8ff78"},{label:"Power Cap",value:totP+" kW",sub:"Baseline",color:"#fd79a8"},{label:"Cooling",value:cool+"",sub:"Active units",color:"#74b9ff"},{label:"UPS",value:ups+" units",sub:"Redundancy",color:"#f7d060"},{label:"Density",value:den+"%",sub:units.length+"/"+(GRID_COLS*GRID_ROWS)+" cells",color:"#ff6b35"}];
+  const grid=document.getElementById("cap-stats");grid.innerHTML="";
+  stats.forEach(({label,value,sub,color})=>{const d=document.createElement("div");d.className="stat-card";d.innerHTML=`<div class="stat-label">${label.toUpperCase()}</div><div class="stat-val" style="color:${color}">${value}</div><div class="stat-sub">${sub}</div>`;grid.appendChild(d);});
+  drawBarChart("chart-pwr","#fd79a8",units.map(u=>({name:u.name.slice(0,8),val:metrics[u.id]?.pwr||0})));
+  drawBarChart("chart-cpu","#00e5ff",units.map(u=>({name:u.name.slice(0,8),val:metrics[u.id]?.cpu||0})));
+  const computeU=units.filter(u=>["rack","gpu"].includes(u.type)).length;
+  const risks=[{active:cool<Math.ceil(computeU/3),level:"warn",msg:"Insufficient cooling",rec:"1 cooling unit per 3 compute nodes"},{active:ups===0,level:"critical",msg:"No UPS deployed",rec:"Add at least 1 Power UPS"},{active:crits>0,level:"critical",msg:crits+" unit(s) critical",rec:"Rebalance workloads"},{active:units.length/(GRID_COLS*GRID_ROWS)>.6,level:"warn",msg:"Floor density >60%",rec:"Plan additional space"},{active:units.filter(u=>u.type==="network").length<2,level:"info",msg:"Single network switch",rec:"Add secondary for HA"}];
+  const rl=document.getElementById("risk-list");rl.innerHTML="";
+  risks.forEach(r=>{const c=!r.active?"#2ed573":r.level==="critical"?"#ff4757":r.level==="warn"?"#ffa502":"#00e5ff";const d=document.createElement("div");d.className="risk-row"+(r.active?"":" pass");d.style.cssText=`background:${!r.active?"#2ed57308":r.level==="critical"?"#ff475710":r.level==="warn"?"#ffa50210":"#00e5ff10"};border:1px solid ${c}33;opacity:${r.active?1:.4};`;d.innerHTML=`<span style="color:${c};flex-shrink:0">${!r.active?"✓":r.level==="critical"?"✕":r.level==="warn"?"⚠":"ℹ"}</span><div><div class="risk-msg">${r.msg}</div>${r.active?`<div class="risk-rec">→ ${r.rec}</div>`:""}</div>`;rl.appendChild(d);});
+}
+
+function drawBarChart(id,color,data){
+  const canvas=document.getElementById(id);if(!canvas)return;
+  canvas.width=canvas.offsetWidth||400;
+  const c=canvas.getContext("2d"),W=canvas.width,H=canvas.height;
+  c.clearRect(0,0,W,H);if(!data.length)return;
+  const maxV=Math.max(...data.map(d=>d.val),1),bW=Math.max(4,(W-40)/data.length-3),padL=6,padB=28,padT=6,chartH=H-padB-padT;
+  data.forEach((d,i)=>{
+    const x=padL+i*((W-padL-6)/data.length)+(((W-padL-6)/data.length)-bW)/2,bH=(d.val/maxV)*chartH;
+    c.fillStyle=(d.val>90?"#ff4757":d.val>75?"#ffa502":color)+"cc";c.fillRect(x,padT+chartH-bH,bW,bH);
+    c.fillStyle="#4a6278";c.font="6px 'Share Tech Mono',monospace";c.textAlign="center";c.save();c.translate(x+bW/2,H-4);c.rotate(-.45);c.fillText(d.name,0,0);c.restore();
+  });
+  c.fillStyle="#4a6278";c.font="7px 'Share Tech Mono',monospace";c.textAlign="left";c.fillText(maxV.toFixed(0),0,padT+8);c.fillText("0",0,H-padB+8);
+}
+
+// ── SETUPS TAB ──
+function renderSetups(){
+  const grid=document.getElementById("setup-grid");grid.innerHTML="";
+  Object.values(SETUPS).forEach(setup=>{
+    const card=document.createElement("div");
+    card.className="setup-card "+setup.cssClass+(activeSetup===setup.id?" active-setup":"");
+    const pillsH=setup.pills.map(p=>`<span class="pill" style="background:${p.bg};border-color:${p.b};color:${p.c}">${p.t}</span>`).join("");
+    const statsH=setup.miniStats.map(s=>`<div><div class="mini-stat-lbl">${s.label}</div><div class="mini-stat-val" style="color:${setup.color}">${s.value}<span style="font-size:7px;color:var(--muted);margin-left:2px;">${s.unit}</span></div></div>`).join("");
+    card.innerHTML=`${activeSetup===setup.id?`<div class="active-badge">● ACTIVE</div>`:""}
+      <div class="setup-name" style="color:${setup.color}">${setup.name}</div>
+      <div class="setup-sub">${setup.sub}</div>
+      <div class="setup-pills">${pillsH}</div>
+      <div class="setup-mini-stats">${statsH}</div>
+      <button class="load-btn" style="color:${setup.color};border-color:${setup.color}55;background:${setup.color}12;">${activeSetup===setup.id?"● CURRENTLY LOADED":"▶ LOAD THIS SETUP"}</button>`;
+    card.querySelector(".load-btn").onclick=()=>{
+      activeSetup=setup.id;selectedId=null;initUnits(setup.id);metrics={};
+      addEvent("ok","Setup loaded: "+setup.name);
+      if(setup.id==="cdx2"){addEvent("cdx","PLEX Runtime™ initializing — pulsed execution engine online");addEvent("cdx","BM25 sparse index built · dense embed cache primed · hybrid fusion ready");}
+      if(setup.id==="scmp"){addEvent("scmp","SCMP Decentralized initializing — Helia IPFS node starting");addEvent("scmp","Peer ID: 12D3KooW"+Math.random().toString(36).slice(2,14).toUpperCase()+" · libp2p TCP transport ready");addEvent("scmp","DataEncryption (AES-256) initialized · ShardManager (256KB) ready · AccessLedger online");}
+      renderSetups();renderGrid();renderTable();renderDetail();updateHeader();renderEvents();renderConfigList();
+      if(setup.id==="scmp")renderSCMPDetail();
+    };
+    grid.appendChild(card);
+  });
+  renderPlexDetail();
+  renderSCMPDetail();
+}
+
+function renderPlexDetail(){
+  const el=document.getElementById("plex-detail");
+  if(activeSetup!=="cdx2"){el.style.display="none";return;}
+  el.style.display="block";
+  const pm=(0.6+Math.random()*.4).toFixed(2),bs=(2.1+Math.random()*.8).toFixed(4),ds=(0.82+Math.random()*.15).toFixed(4),fs=(0.74+Math.random()*.12).toFixed(4);
+  const euc=Math.floor(480+Math.random()*120),td=(Math.random()*1.8).toFixed(2);
+  el.innerHTML=`<div class="plex-section">
+    <div class="plex-title">
+      <div class="pulse-anim">${[0,1,2,3,4].map(i=>`<div class="pulse-bar" style="animation-delay:${i*.15}s"></div>`).join("")}</div>
+      PLEX RUNTIME™ — CDX v2 LIVE ENGINE STATUS
+    </div>
+    <div class="g3" style="margin-bottom:10px;">
+      <div style="background:#091510;border:1px solid #39ff9a22;border-radius:3px;padding:8px;"><div style="font-size:7px;color:#39ff9a;letter-spacing:1px;margin-bottom:4px;">PULSE TIMING</div><div style="font-family:'Orbitron',sans-serif;font-size:15px;color:#fff;font-weight:700;">${pm}<span style="font-size:8px;color:var(--muted);margin-left:2px;">ms</span></div><div style="font-size:7px;color:var(--muted);margin-top:2px;">bounded · deterministic</div></div>
+      <div style="background:#091510;border:1px solid #39ff9a22;border-radius:3px;padding:8px;"><div style="font-size:7px;color:#39ff9a;letter-spacing:1px;margin-bottom:4px;">EU BATCH SIZE</div><div style="font-family:'Orbitron',sans-serif;font-size:15px;color:#fff;font-weight:700;">${euc}<span style="font-size:8px;color:var(--muted);margin-left:2px;">units</span></div><div style="font-size:7px;color:var(--muted);margin-top:2px;">exhaustive · idempotent</div></div>
+      <div style="background:#091510;border:1px solid #39ff9a22;border-radius:3px;padding:8px;"><div style="font-size:7px;color:#39ff9a;letter-spacing:1px;margin-bottom:4px;">THERMAL DEBT</div><div style="font-family:'Orbitron',sans-serif;font-size:15px;color:#fff;font-weight:700;">${td}<span style="font-size:8px;color:var(--muted);margin-left:2px;">°C</span></div><div style="font-size:7px;color:var(--muted);margin-top:2px;">predictive avoidance</div></div>
+    </div>
+    <div style="font-size:7px;color:#39ff9a;letter-spacing:2px;margin-bottom:6px;">HYBRID SEARCH ENGINE — BM25 SPARSE + DENSE EMBEDDING FUSION (search.js CDX v2)</div>
+    <div class="g3" style="margin-bottom:10px;">
+      <div class="pipe-stage"><div class="pipe-stage-title">SPARSE (BM25)</div><div class="pipe-stage-val">${bs}</div><div class="pipe-stage-sub">k1=1.2 · b=0.75</div><div style="height:2px;background:#39ff9a22;border-radius:1px;margin-top:5px;"><div style="height:100%;width:${Math.min(100,+bs/3*100).toFixed(0)}%;background:#39ff9a;border-radius:1px;"></div></div></div>
+      <div class="pipe-stage"><div class="pipe-stage-title">DENSE (cosine)</div><div class="pipe-stage-val">${ds}</div><div class="pipe-stage-sub">dim=384 · normalized</div><div style="height:2px;background:#00e5ff22;border-radius:1px;margin-top:5px;"><div style="height:100%;width:${Math.min(100,+ds*100).toFixed(0)}%;background:#00e5ff;border-radius:1px;"></div></div></div>
+      <div class="pipe-stage" style="border-color:#f7d06044;"><div class="pipe-stage-title" style="color:#f7d060;">FUSED SCORE</div><div class="pipe-stage-val" style="color:#f7d060;">${fs}</div><div class="pipe-stage-sub">α=0.7 adaptive</div><div style="height:2px;background:#f7d06022;border-radius:1px;margin-top:5px;"><div style="height:100%;width:${Math.min(100,+fs*100).toFixed(0)}%;background:#f7d060;border-radius:1px;"></div></div></div>
+    </div>
+    <div style="font-size:7px;color:#39ff9a;letter-spacing:2px;margin-bottom:5px;">EXECUTION UNIT PIPELINE (CDX v2)</div>
+    <div class="eu-flow">
+      ${[["INTENT ROUTER","#39ff9a"],["LOCAL ORCH","#00e5ff"],["PULSE LAYER","#74b9ff"],["EU EXECUTE","#a8ff78"],["REASON RECORD","#f7d060"]].map((s,i)=>`${i>0?`<span style="color:var(--muted);font-size:10px;">→</span>`:""}
+        <span class="eu-box" style="background:${s[1]}18;border-color:${s[1]}55;color:${s[1]}">${s[0]}</span>`).join("")}
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-top:8px;">
+      ${[["G1 DETERMINISM","✓ Identical inputs → identical outputs"],["G2 EXHAUSTIVE","✓ Each input processed exactly once"],["G3 BOUNDED","✓ CPU/mem/thermal capped always"],["G4 LINEAR COST","✓ Cost ∝ input size linearly"],["G5 REPLAYABLE","✓ Any execution deterministically replayable"],["G6 EXPLAINABLE","✓ Every decision emits reason record"]].map(([g,d])=>`<div style="background:#091510;border:1px solid #39ff9a1a;border-radius:2px;padding:5px;"><div style="font-size:7px;color:#39ff9a;letter-spacing:1px;">${g}</div><div style="font-size:7px;color:var(--muted);margin-top:2px;">${d}</div></div>`).join("")}
+    </div>
+  </div>`;
+}
+
+function renderSCMPDetail(){
+  const el=document.getElementById("scmp-detail");
+  if(activeSetup!=="scmp"){el.style.display="none";return;}
+  el.style.display="block";
+
+  // Live-ish simulated SCMP metrics
+  const ipfsNodes=units.filter(u=>u.type==="storage").length;
+  const shardMs=(120+Math.random()*60).toFixed(0);
+  const encMs=(2+Math.random()*2).toFixed(1);
+  const tokenMs=(.8+Math.random()*.4).toFixed(2);
+  const ledgerEntries=Math.floor(220+Math.random()*80);
+  const activePolicies=Math.floor(12+Math.random()*8);
+  const totalCIDs=Math.floor(ipfsNodes*14+Math.random()*20);
+  const shardPct=Math.floor(60+Math.random()*38);
+  const cacheHit=Math.floor(72+Math.random()*24);
+  const peerID="12D3KooW"+Math.random().toString(36).slice(2,14).toUpperCase();
+
+  el.innerHTML=`<div class="scmp-section">
+    <div class="scmp-title">
+      <span style="font-size:16px">◈</span>
+      SCMP DECENTRALIZED — LIVE NODE STATUS (ipfs-storage.js + access-control.js)
+    </div>
+
+    <!-- top KPI row -->
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px;">
+      ${[
+        ["IPFS NODES",ipfsNodes,"◈","#b48eff","Helia · libp2p TCP"],
+        ["TOTAL CIDs",totalCIDs,"⬡","#00e5ff","Content-addressed"],
+        ["ACTIVE POLICIES",activePolicies,"🔑","#f7d060","Capability tokens"],
+        ["LEDGER ENTRIES",ledgerEntries,"📋","#39ff9a","Append-only IPFS"],
+      ].map(([l,v,ic,c,sub])=>`
+        <div style="background:#090814;border:1px solid ${c}22;border-radius:3px;padding:8px;">
+          <div style="font-size:7px;color:${c};letter-spacing:1px;margin-bottom:3px;">${l}</div>
+          <div style="font-family:'Orbitron',sans-serif;font-size:17px;color:#fff;font-weight:700;">${ic} ${v}</div>
+          <div style="font-size:7px;color:var(--muted);margin-top:2px;">${sub}</div>
+        </div>`).join("")}
+    </div>
+
+    <!-- Pipeline: encrypt → shard → IPFS -->
+    <div style="font-size:7px;color:#b48eff;letter-spacing:2px;margin-bottom:6px;">DATA PIPELINE — ipfs-storage.js (DataEncryption → ShardManager → IPFSStorage)</div>
+    <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;margin-bottom:10px;">
+      ${[
+        {s:"APPLICATION DATA",c:"#b48eff"},
+        {s:"AES-256 ENCRYPT",c:"#00e5ff",stat:encMs+"ms"},
+        {s:"256KB SHARD",c:"#a8ff78",stat:shardMs+"ms/shard"},
+        {s:"SHA-256 HASH",c:"#f7d060",stat:"per shard"},
+        {s:"IPFS ADD (CID)",c:"#39ff9a",stat:"content-addr"},
+        {s:"METADATA CID",c:"#fd79a8",stat:"index entry"},
+      ].map((s,i)=>`${i>0?`<span style="color:var(--muted);font-size:9px;">→</span>`:""}
+        <div style="background:${s.c}15;border:1px solid ${s.c}44;border-radius:2px;padding:3px 7px;text-align:center;">
+          <div style="font-size:7px;color:${s.c};letter-spacing:1px;">${s.s}</div>
+          ${s.stat?`<div style="font-size:6px;color:var(--muted);margin-top:1px;">${s.stat}</div>`:""}
+        </div>`).join("")}
+    </div>
+
+    <!-- Access control pipeline -->
+    <div style="font-size:7px;color:#f7d060;letter-spacing:2px;margin-bottom:6px;">ACCESS CONTROL — access-control.js (AccessPolicy → CapabilityToken → AccessLedger)</div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:10px;">
+      <div style="background:#090814;border:1px solid #f7d06033;border-radius:3px;padding:8px;">
+        <div style="font-size:7px;color:#f7d060;letter-spacing:1px;margin-bottom:5px;">CAPABILITY TOKEN</div>
+        <div style="font-size:7px;color:var(--muted);line-height:1.7;">
+          <div>Sign algo: <span style="color:#f7d060;">HMAC-SHA256</span></div>
+          <div>Key derive: <span style="color:#f7d060;">HMAC(policy+master)</span></div>
+          <div>Verify: <span style="color:#39ff9a;">${tokenMs}ms</span></div>
+          <div>Forgeable: <span style="color:#ff4757;">NO ✗</span></div>
+        </div>
+      </div>
+      <div style="background:#090814;border:1px solid #b48eff33;border-radius:3px;padding:8px;">
+        <div style="font-size:7px;color:#b48eff;letter-spacing:1px;margin-bottom:5px;">POLICY ENGINE</div>
+        <div style="font-size:7px;color:var(--muted);line-height:1.7;">
+          <div>Time limit: <span style="color:#b48eff;">expiresAt check</span></div>
+          <div>View limit: <span style="color:#b48eff;">maxViews counter</span></div>
+          <div>Revocation: <span style="color:#b48eff;">instant</span></div>
+          <div>Permissions: <span style="color:#b48eff;">read/write/delete</span></div>
+        </div>
+      </div>
+      <div style="background:#090814;border:1px solid #39ff9a33;border-radius:3px;padding:8px;">
+        <div style="font-size:7px;color:#39ff9a;letter-spacing:1px;margin-bottom:5px;">AUDIT LEDGER (IPFS)</div>
+        <div style="font-size:7px;color:var(--muted);line-height:1.7;">
+          <div>Type: <span style="color:#39ff9a;">append-only chain</span></div>
+          <div>Entries: <span style="color:#39ff9a;">${ledgerEntries}</span></div>
+          <div>Mutable: <span style="color:#ff4757;">NO ✗</span></div>
+          <div>Entry types: <span style="color:#39ff9a;">GRANT/VIEW/REVOKE</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- IPFS node distribution -->
+    <div style="font-size:7px;color:#00e5ff;letter-spacing:2px;margin-bottom:6px;">IPFS NODE CLUSTER — Helia · MemoryBlockstore · libp2p</div>
+    <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px;">
+      ${units.filter(u=>u.type==="storage").map((u,i)=>{
+        const m=metrics[u.id];
+        const shards=Math.floor(8+Math.random()*12);
+        return `<div style="background:#090814;border:1px solid #b48eff33;border-radius:2px;padding:5px 8px;min-width:110px;">
+          <div style="font-size:7px;color:#b48eff;margin-bottom:2px;">◈ ${u.name}</div>
+          <div style="font-size:7px;color:var(--muted);">CIDs: <span style="color:#00e5ff">${shards}</span> · Pos [${u.col},${u.row}]</div>
+          <div class="shard-track"><div class="shard-fill" style="width:${Math.min(100,shards*5)}%"></div></div>
+          ${m?`<div style="font-size:6px;color:${m.pwr<1?'#39ff9a':'#ffa502'};margin-top:2px;">${m.pwr.toFixed(1)}kW · ${m.status}</div>`:""}
+        </div>`;
+      }).join("")}
+    </div>
+
+    <!-- performance + network -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+      <div style="background:#090814;border:1px solid #00e5ff22;border-radius:3px;padding:8px;">
+        <div style="font-size:7px;color:#00e5ff;letter-spacing:1px;margin-bottom:6px;">OPERATION TIMING (O-NOTATION)</div>
+        ${[
+          ["store() write","O(n) data size",shardMs+" ms/shard","#a8ff78"],
+          ["get() read","O(1) cached · O(n) cold","3–320 ms","#00e5ff"],
+          ["shareData() grant","O(1)","~"+Math.floor(80+Math.random()*80)+" ms","#f7d060"],
+          ["revokeAccess()","O(1)","~"+Math.floor(60+Math.random()*60)+" ms","#fd79a8"],
+          ["getAuditTrail()","O(n) ledger","<1ms/1000 entries","#39ff9a"],
+        ].map(([op,big,t,c])=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:2px 0;border-bottom:1px solid #1a2a3a;">
+          <span style="font-size:7px;color:var(--muted);">${op}</span>
+          <span style="font-size:7px;color:${c};">${t}</span>
+        </div>`).join("")}
+      </div>
+      <div style="background:#090814;border:1px solid #b48eff22;border-radius:3px;padding:8px;">
+        <div style="font-size:7px;color:#b48eff;letter-spacing:1px;margin-bottom:6px;">NETWORK / PEER INFO</div>
+        <div style="font-size:7px;color:var(--muted);line-height:1.9;">
+          <div>Peer ID: <span style="color:#b48eff;font-size:6px;">${peerID.slice(0,22)}…</span></div>
+          <div>Transport: <span style="color:#00e5ff;">libp2p TCP + Yamux</span></div>
+          <div>Encryption: <span style="color:#00e5ff;">Noise protocol</span></div>
+          <div>Cache hit rate: <span style="color:#39ff9a;">${cacheHit}%</span></div>
+          <div>Shard integrity: <span style="color:#39ff9a;">SHA-256 verified ✓</span></div>
+          <div>No central server: <span style="color:#39ff9a;">TRUE ✓</span></div>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+// ── COMPARE TAB ──
+function renderCompare(){
+  const setups=Object.values(SETUPS),bmarks=setups.map(s=>s.benchmarks);
+  function classify(vals,lower=false){const best=lower?Math.min(...vals):Math.max(...vals),worst=lower?Math.max(...vals):Math.min(...vals);return vals.map(v=>v===best?"best":v===worst?"worst":"mid");}
+  const tpC=classify(bmarks.map(b=>b.throughput)),p50C=classify(bmarks.map(b=>b.p50),true),p95C=classify(bmarks.map(b=>b.p95),true),p99C=classify(bmarks.map(b=>b.p99),true);
+  const pwC=classify(bmarks.map(b=>b.power),true),pueC=classify(bmarks.map(b=>b.pue),true),wC=classify(bmarks.map(b=>b.waterLhr),true),coC=classify(bmarks.map(b=>b.coolingOH),true),csC=classify(bmarks.map(b=>b.costHr),true);
+
+  const hdr=`<div class="cmp-header-row"><div></div>${setups.map(s=>`<div class="cmp-col-head" style="background:${s.color}18;border:1px solid ${s.color}44;color:${s.color}">${s.name}</div>`).join("")}</div>`;
+  const boolC=v=>{if(v===true||v==="yes")return`<div class="cmp-val yes">YES ✓</div>`;if(v===false||v==="no")return`<div class="cmp-val no">NO ✗</div>`;return`<div class="cmp-val partial">PARTIAL</div>`;};
+  const vc=(v,cls)=>`<div class="cmp-cell"><div class="cmp-val ${cls}">${v}</div>${cls==="best"?`<div class="win-badge">▲ BEST</div>`:""}</div>`;
+
+  const sections=[
+    {label:"THROUGHPUT & LATENCY",rows:[
+      {label:"Throughput (ops/s)",vals:bmarks.map((b,i)=>[b.throughput.toLocaleString(),tpC[i]])},
+      {label:"P50 Latency (ms)",vals:bmarks.map((b,i)=>[b.p50,p50C[i]])},
+      {label:"P95 Latency (ms)",vals:bmarks.map((b,i)=>[b.p95,p95C[i]])},
+      {label:"P99 Latency (ms)",vals:bmarks.map((b,i)=>[b.p99.toLocaleString(),p99C[i]])},
+    ]},
+    {label:"POWER & THERMAL",rows:[
+      {label:"Power Draw (kW)",vals:bmarks.map((b,i)=>[b.power,pwC[i]])},
+      {label:"PUE",vals:bmarks.map((b,i)=>[b.pue,pueC[i]])},
+      {label:"Water Usage (L/hr)",vals:bmarks.map((b,i)=>[b.waterLhr,wC[i]])},
+      {label:"Cooling Overhead",vals:bmarks.map((b,i)=>[b.coolingOH+"%",coC[i]])},
+      {label:"Thermal Strategy",vals:bmarks.map(b=>[b.thermal,b.thermal==="predictive"?"best":"worst"])},
+    ]},
+    {label:"GUARANTEES",rows:[
+      {label:"Deterministic",bool:true,vals:bmarks.map(b=>b.deterministic)},
+      {label:"Explainable",bool:true,vals:bmarks.map(b=>b.explainable)},
+      {label:"Replayable",bool:true,vals:bmarks.map(b=>b.replayable)},
+    ]},
+    {label:"COST",rows:[
+      {label:"Est. Cost / hr",vals:bmarks.map((b,i)=>["$"+b.costHr.toFixed(2),csC[i]])},
+    ]},
+    {label:"SECURITY & SOVEREIGNTY",rows:[
+      {label:"Central Server",vals:[["REQUIRED","worst"],["REQUIRED","worst"],["REQUIRED","worst"],["NONE","best"],["NONE","best"]]},
+      {label:"Encryption at Rest",vals:[["NONE","worst"],["NONE","worst"],["PARTIAL","mid"],["NONE","worst"],["AES-256 ✓","best"]]},
+      {label:"Capability Tokens",bool:true,vals:[false,false,false,false,true]},
+      {label:"Audit Ledger",vals:[["NONE","worst"],["NONE","worst"],["DB-only","mid"],["NONE","worst"],["IPFS immutable","best"]]},
+      {label:"Data Sharding",bool:true,vals:[false,false,false,false,true]},
+      {label:"Instant Revocation",bool:true,vals:[false,false,false,false,true]},
+      {label:"Zero-Trust Access",bool:true,vals:[false,false,false,false,true]},
+      {label:"Self-Sovereign",bool:true,vals:[false,false,false,false,true]},
+    ]},
+  ];
+
+  let html=hdr;
+  sections.forEach(s=>{
+    html+=`<div class="cmp-section-label">${s.label}</div>`;
+    s.rows.forEach(row=>{
+      html+=`<div class="cmp-row"><div class="cmp-row-label">${row.label}</div>`;
+      if(row.bool){
+        row.vals.forEach(v=>{html+=`<div class="cmp-cell">${boolC(v)}</div>`;});
+      } else {
+        row.vals.forEach(([v,cls])=>{html+=vc(v,cls);});
+      }
+      html+="</div>";
+    });
+  });
+  document.getElementById("compare-table").innerHTML=html;
+
+  const chartsWrap=document.getElementById("compare-charts");
+  chartsWrap.innerHTML=`<div class="cmp-chart-wrap"><div class="card-title">POWER DRAW COMPARISON (kW) — lower is better</div><div class="bar-compare" id="bar-power"></div></div><div class="cmp-chart-wrap"><div class="card-title">LATENCY PROFILE — P50 / P95 / P99 (ms) — lower is better</div><div id="lat-chart"></div></div>`;
+
+  setTimeout(()=>{
+    const maxP=Math.max(...bmarks.map(b=>b.power));
+    const bp=document.getElementById("bar-power");
+    if(bp){setups.forEach((s,i)=>{const b=bmarks[i],pct=(b.power/maxP*100).toFixed(0),isBest=pwC[i]==="best";bp.innerHTML+=`<div class="bar-compare-row"><span class="bar-compare-label">${s.name.slice(0,18)}</span><div class="bar-compare-track"><div class="bar-compare-fill" style="width:${pct}%;background:${isBest?"#39ff9a":pwC[i]==="worst"?"#ff4757":"#ffa502"}33;"><span class="bar-compare-text" style="color:${s.color}">${b.power} kW${isBest?" ← BEST":""}</span></div></div></div>`;});}
+    const maxL=Math.max(...bmarks.map(b=>b.p99));
+    const lc=document.getElementById("lat-chart");
+    if(lc){setups.forEach((s,i)=>{const b=bmarks[i];lc.innerHTML+=`<div style="margin-bottom:8px;"><div style="font-size:7px;color:${s.color};letter-spacing:1px;margin-bottom:3px;">${s.name}</div>${[["P50",b.p50,"#2ed573"],["P95",b.p95,"#ffa502"],["P99",b.p99,"#ff4757"]].map(([l,v,c])=>`<div class="lat-row"><span class="lat-label">${l}</span><div class="lat-track"><div class="lat-fill" style="width:${Math.min(100,v/maxL*100)}%;background:${c}88;"></div></div><span style="font-size:8px;color:${c};min-width:55px;flex-shrink:0">${v.toLocaleString()} ms</span></div>`).join("")}</div>`;});}
+  },80);
+}
+
+// ── TABS ──
+document.querySelectorAll(".tab-btn").forEach(btn=>{
+  btn.onclick=()=>{
+    document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("active"));
+    document.querySelectorAll(".tab-content").forEach(t=>t.classList.remove("active"));
+    btn.classList.add("active");document.getElementById("tab-"+btn.dataset.tab).classList.add("active");
+    if(btn.dataset.tab==="setups")renderSetups();
+    if(btn.dataset.tab==="compare")renderCompare();
+    if(btn.dataset.tab==="config"){renderConfigList();renderConfigPanel();}
+    if(btn.dataset.tab==="events")renderEvents();
+    if(btn.dataset.tab==="capacity")renderCapacity();
+  };
+});
+
+document.getElementById("sim-toggle").onclick=function(){
+  simRunning=!simRunning;
+  if(simRunning){startSim();this.textContent="▶ LIVE";this.className="live";}
+  else{stopSim();this.textContent="⏸ PAUSED";this.className="paused";}
+};
+
+// ── BOOT ──
+initUnits(null);buildScenarios();buildPalette();renderGrid();initSparklines();
+addEvent("info","DataCore OS initialized — CDX v2 + SCMP Decentralized edition.");
+addEvent("ok","Default floor layout loaded. "+units.length+" units online.");
+addEvent("info","SETUPS tab: Traditional HPC · GPU Cluster · Hybrid · CDX v2 · SCMP Decentralized");
+addEvent("scmp","SCMP = no cloud, no central server — IPFS-native, AES-256, self-sovereign.");
+renderEvents();renderTable();
+tick();startSim();
+
+window.addEventListener("resize",()=>{
+  ["cpu","ram","net","pwr"].forEach(k=>{const c=document.getElementById("sp-"+k);if(c)c.width=c.offsetWidth||180;});
+  renderSparklines();
+  if(document.getElementById("tab-capacity").classList.contains("active"))renderCapacity();
+});
+</script>
+</body>
+</html>
