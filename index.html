@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CDX v2 Runtime</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&family=IBM+Plex+Sans:wght@300;400;500&display=swap">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#050810;--surface:#0a0e1a;--surface2:#101522;--surface3:#161d2c;
+  --border:#1a2540;--border2:#222f4a;
+  --cyan:#00e5cc;--cyan-dim:#007d70;--cyan-glow:rgba(0,229,204,0.15);
+  --amber:#ff8040;--amber-dim:#7a3a18;
+  --gold:#f0c040;--red:#ff3355;--green:#00e87a;--blue:#4499ff;
+  --purple:#a060ff;
+  --text:#b0c8e0;--text-bright:#deeeff;--muted:#3d5570;
+  --font-d:'Orbitron',monospace;--font-m:'Share Tech Mono',monospace;--font-b:'IBM Plex Sans',sans-serif;
+}
+body{background:var(--bg);color:var(--text);font-family:var(--font-b);font-size:12px;height:100vh;overflow:hidden;display:flex;flex-direction:column}
+body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,0.025) 3px,rgba(0,0,0,0.025) 4px);pointer-events:none;z-index:9999}
+
+/* ── HEADER ── */
+.hdr{display:flex;align-items:center;gap:16px;padding:0 16px;height:56px;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0;position:relative;overflow:hidden}
+.hdr::after{content:'';position:absolute;bottom:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent 0%,var(--cyan) 30%,var(--cyan) 70%,transparent 100%);opacity:.2}
+.logo{display:flex;align-items:center;gap:10px}
+.logo-hex{width:28px;height:28px;clip-path:polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%);background:linear-gradient(135deg,var(--cyan-glow),rgba(0,229,204,0.05));border:1.5px solid var(--cyan);display:flex;align-items:center;justify-content:center}
+.logo-hex svg{width:12px;height:12px}
+.brand-name{font-family:var(--font-d);font-size:12px;font-weight:900;letter-spacing:4px;color:var(--text-bright)}
+.brand-ver{font-family:var(--font-m);font-size:9px;color:var(--cyan);letter-spacing:2px;margin-top:2px}
+.sep{width:1px;height:28px;background:var(--border2);flex-shrink:0}
+.hchip{display:flex;flex-direction:column;gap:2px;flex-shrink:0}
+.hchip label{font-family:var(--font-m);font-size:8px;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase}
+.hchip value{font-family:var(--font-m);font-size:15px;color:var(--text-bright);line-height:1}
+.hchip value.hot{color:var(--red)}
+.hchip value.warn{color:var(--amber)}
+.hchip value.ok{color:var(--green)}
+.pdot{width:7px;height:7px;border-radius:50%;background:var(--cyan);box-shadow:0 0 10px var(--cyan);animation:pblink 1.2s ease-in-out infinite;flex-shrink:0}
+@keyframes pblink{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.3;transform:scale(.7)}}
+.mode-toggle{display:flex;gap:1px;border:1px solid var(--border2);border-radius:3px;overflow:hidden;margin-left:auto}
+.mbtn{background:var(--surface2);border:none;color:var(--muted);font-family:var(--font-m);font-size:9px;letter-spacing:1.5px;padding:5px 14px;cursor:pointer;transition:all .2s;text-transform:uppercase}
+.mbtn.on{background:var(--cyan);color:var(--bg);font-weight:bold}
+.mbtn.trad.on{background:var(--amber);color:var(--bg)}
+.abadge{display:none;align-items:center;gap:4px;background:rgba(255,51,85,.12);border:1px solid rgba(255,51,85,.4);border-radius:3px;padding:2px 7px;font-family:var(--font-m);font-size:9px;color:var(--red)}
+.abadge.show{display:flex}
+
+/* ── MAIN GRID ── */
+.main{display:grid;grid-template-columns:270px 1fr 288px;gap:1px;background:var(--border);flex:1;overflow:hidden}
+.panel{background:var(--surface);display:flex;flex-direction:column;overflow:hidden}
+
+/* ── PANEL HEADER ── */
+.ph{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-bottom:1px solid var(--border);background:var(--surface2);flex-shrink:0}
+.pt{font-family:var(--font-d);font-size:8px;letter-spacing:3px;color:var(--cyan)}
+.pt.amber{color:var(--amber)}
+.pm{font-family:var(--font-m);font-size:10px;color:var(--muted)}
+
+/* ── FLOOR MAP ── */
+.floor{padding:10px;flex:1;overflow:hidden;min-height:0}
+.rgrid{display:grid;grid-template-columns:repeat(6,1fr);grid-template-rows:repeat(4,1fr);gap:3px;height:100%}
+.rack{border-radius:3px;border:1px solid rgba(255,255,255,.04);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:background .5s ease,border-color .3s ease;position:relative;overflow:hidden}
+.rack::before{content:'';position:absolute;inset:0;background:repeating-linear-gradient(90deg,transparent,transparent 2px,rgba(255,255,255,.04) 2px,rgba(255,255,255,.04) 3px)}
+.rack-id{font-family:var(--font-m);font-size:8px;color:rgba(255,255,255,.35);z-index:1}
+.rack-temp{font-family:var(--font-m);font-size:10px;font-weight:bold;z-index:1}
+.rack-bar{position:absolute;bottom:0;left:0;right:0;height:3px;background:rgba(0,0,0,.3)}
+.rack-bar-fill{height:100%;transition:width .6s ease,background .3s}
+.rack:hover{transform:scale(1.06);z-index:10;box-shadow:0 0 16px rgba(0,229,204,.25)}
+@keyframes rack-fire{0%{box-shadow:0 0 0 rgba(0,229,204,.9)}100%{box-shadow:0 0 24px rgba(0,229,204,0)}}
+@keyframes rack-fail{0%,100%{opacity:1}40%{opacity:.15}}
+.rack.fired{animation:rack-fire .7s ease-out}
+.rack.failed{animation:rack-fail .5s ease-out;border-color:var(--red)!important}
+
+/* ── THERMAL DEBT ── */
+.tdebt{padding:10px 12px;border-top:1px solid var(--border);flex-shrink:0}
+.tsub{font-family:var(--font-d);font-size:7px;letter-spacing:2px;color:var(--amber);margin-bottom:7px}
+.debt-row{display:grid;grid-template-columns:repeat(6,1fr);gap:2px;margin-bottom:5px}
+.dbar{display:flex;flex-direction:column;align-items:center;gap:2px}
+.dbar-wrap{width:100%;height:22px;background:var(--surface3);border-radius:2px;overflow:hidden;display:flex;align-items:flex-end}
+.dbar-fill{width:100%;background:linear-gradient(0deg,var(--amber),var(--gold));transition:height .6s ease;border-radius:2px}
+.dlabel{font-family:var(--font-m);font-size:7px;color:var(--muted)}
+.debtfoot{font-family:var(--font-m);font-size:9px;color:var(--muted);display:flex;justify-content:space-between}
+
+/* ── CENTER METRICS ROW ── */
+.mrow{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--border);flex-shrink:0}
+.mcard{background:var(--surface2);padding:10px 14px;position:relative;overflow:hidden}
+.mcard::before{content:'';position:absolute;top:0;left:0;right:0;height:2px}
+.mcard.pw::before{background:var(--amber)}
+.mcard.cp::before{background:var(--cyan)}
+.mcard.tm::before{background:var(--gold)}
+.mcard.wt::before{background:var(--blue)}
+.mlabel{font-family:var(--font-m);font-size:8px;color:var(--muted);letter-spacing:1px;margin-bottom:3px}
+.mval{font-family:var(--font-m);font-size:20px;font-weight:bold;color:var(--text-bright);line-height:1}
+.munit{font-size:10px;color:var(--muted);margin-left:1px}
+.mdelta{font-family:var(--font-m);font-size:9px;margin-top:3px;color:var(--muted)}
+.mdelta.up{color:var(--amber)}.mdelta.dn{color:var(--green)}
+
+/* ── CHARTS ── */
+.charts{flex:1;display:grid;grid-template-rows:1fr 1fr;gap:1px;background:var(--border);overflow:hidden}
+.chpanel{background:var(--surface);padding:8px 12px;overflow:hidden;display:flex;flex-direction:column}
+.chlabel{font-family:var(--font-d);font-size:7px;letter-spacing:2px;color:var(--muted);margin-bottom:4px;flex-shrink:0}
+.chcanvas{flex:1;width:100%}
+
+/* ── PULSE TIMELINE ── */
+.ptimeline{border-top:1px solid var(--border);padding:8px 12px;flex-shrink:0;height:106px}
+.ptitle{font-family:var(--font-d);font-size:7px;letter-spacing:2px;color:var(--cyan);margin-bottom:5px}
+.plist{display:flex;flex-direction:column;gap:3px;overflow:hidden}
+.pentry{display:flex;align-items:center;gap:6px;font-family:var(--font-m);font-size:10px}
+@keyframes sldin{from{opacity:0;transform:translateX(-8px)}to{opacity:1;transform:translateX(0)}}
+.pentry{animation:sldin .3s ease}
+.pbar{flex:1;height:5px;background:var(--surface3);border-radius:2px;overflow:hidden}
+.pbarfill{height:100%;border-radius:2px}
+
+/* ── EU LOG ── */
+.eulog{flex:1;overflow-y:auto;padding:4px;display:flex;flex-direction:column;gap:2px;min-height:0}
+.eulog::-webkit-scrollbar{width:3px}.eulog::-webkit-scrollbar-track{background:var(--surface)}.eulog::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+.eucard{background:var(--surface2);border:1px solid var(--border);border-radius:3px;padding:6px 8px;cursor:default;transition:border-color .2s}
+@keyframes euap{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+.eucard{animation:euap .25s ease}
+.eucard:hover{border-color:var(--border2)}
+.eucard.failed{border-color:rgba(255,51,85,.4);background:rgba(255,51,85,.04)}
+.eurow{display:flex;align-items:center;justify-content:space-between;margin-bottom:3px}
+.euid{font-family:var(--font-m);font-size:10px;color:var(--cyan);font-weight:bold}
+.euid.failed{color:var(--red)}
+.eubadge{font-size:8px;padding:1px 5px;border-radius:2px;font-family:var(--font-m)}
+.eubadge.completed{background:rgba(0,232,122,.12);color:var(--green)}
+.eubadge.failed{background:rgba(255,51,85,.12);color:var(--red)}
+.eureason{font-family:var(--font-m);font-size:9px;color:var(--muted);line-height:1.55}
+.eureason span{color:var(--text)}
+.eureason em{color:var(--red);font-style:normal}
+
+/* ── INTENT QUEUE ── */
+.iqueue{padding:8px;display:flex;flex-direction:column;gap:3px;border-top:1px solid var(--border);flex-shrink:0;min-height:70px}
+.iitem{font-family:var(--font-m);font-size:10px;color:var(--muted);padding:2px 0}
+.iitem span{color:var(--text)}
+
+/* ── FOOTER ── */
+.ftr{display:flex;align-items:center;gap:10px;padding:0 14px;height:48px;background:var(--surface);border-top:1px solid var(--border);flex-shrink:0}
+.flabel{font-family:var(--font-d);font-size:7px;letter-spacing:2px;color:var(--muted);white-space:nowrap}
+.wbtn{display:flex;align-items:center;gap:5px;background:var(--surface2);border:1px solid var(--border2);border-radius:3px;color:var(--text);font-family:var(--font-m);font-size:9px;letter-spacing:1px;padding:5px 11px;cursor:pointer;transition:all .2s;text-transform:uppercase}
+.wbtn:hover{border-color:var(--cyan);color:var(--cyan);background:var(--cyan-glow)}
+.wbtn.emg{border-color:rgba(255,51,85,.4);color:var(--red)}
+.wbtn.emg:hover{background:rgba(255,51,85,.08)}
+.wdot{width:5px;height:5px;border-radius:50%;flex-shrink:0}
+.autobtn{background:rgba(0,229,204,.08);border:1px solid var(--cyan-dim);border-radius:3px;color:var(--cyan);font-family:var(--font-m);font-size:9px;padding:5px 10px;cursor:pointer;letter-spacing:1px;transition:all .2s}
+.autobtn.on{background:rgba(0,229,204,.18);animation:aglow 1.5s ease-in-out infinite}
+@keyframes aglow{0%,100%{box-shadow:0 0 4px var(--cyan-dim)}50%{box-shadow:0 0 14px var(--cyan)}}
+.fstatus{margin-left:auto;font-family:var(--font-m);font-size:9px;color:var(--muted);max-width:320px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* ── TOOLTIP ── */
+.tip{position:fixed;background:var(--surface3);border:1px solid var(--border2);border-radius:4px;padding:8px 12px;font-family:var(--font-m);font-size:10px;color:var(--text);pointer-events:none;z-index:2000;opacity:0;transition:opacity .12s;max-width:220px;line-height:1.7}
+.tip.show{opacity:1}
+
+/* ── TRAD WARNING BANNER ── */
+.twarn{display:none;align-items:center;justify-content:center;gap:6px;padding:3px;background:rgba(255,128,64,.08);border-bottom:1px solid rgba(255,128,64,.25);font-family:var(--font-m);font-size:9px;color:var(--amber);letter-spacing:1px;flex-shrink:0}
+.twarn.show{display:flex}
+
+/* ── COMPARE STRIPE ── */
+.cstripe{position:absolute;top:0;right:0;bottom:0;width:3px;opacity:.4}
+.cdx-stripe{background:var(--cyan)}
+.trad-stripe{background:var(--amber)}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════ HEADER ═══════════════════════ -->
+<header class="hdr">
+  <div class="logo">
+    <div class="logo-hex">
+      <svg viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <polygon points="6,1 11,3.5 11,8.5 6,11 1,8.5 1,3.5" fill="rgba(0,229,204,.15)" stroke="#00e5cc" stroke-width="1"/>
+        <polygon points="6,3.5 8.5,5 8.5,7 6,8.5 3.5,7 3.5,5" fill="#00e5cc" opacity=".5"/>
+      </svg>
+    </div>
+    <div>
+      <div class="brand-name">CDX v2 RUNTIME</div>
+      <div class="brand-ver">COHERENT DATA EXECUTION</div>
+    </div>
+  </div>
+
+  <div class="sep"></div>
+  <div class="hchip"><label>PULSE</label><value id="h-pulse">0000</value></div>
+  <div class="sep"></div>
+  <div class="hchip"><label>NODES</label><value id="h-nodes">24</value></div>
+  <div class="sep"></div>
+  <div class="hchip"><label>AVG CPU</label><value id="h-cpu">—</value></div>
+  <div class="sep"></div>
+  <div class="hchip"><label>TOTAL POWER</label><value id="h-power">—</value></div>
+  <div class="sep"></div>
+  <div class="hchip"><label>THERMAL</label><value id="h-therm" class="ok">NOMINAL</value></div>
+  <div class="sep"></div>
+  <div class="hchip"><label>FAILURES</label><value id="h-fails" class="ok">0</value></div>
+
+  <span id="alert-badge" class="abadge">⚠ <span id="alert-n">0</span> ALERTS</span>
+
+  <div class="pdot" id="pdot"></div>
+  <span style="font-family:var(--font-m);font-size:8px;color:var(--muted);letter-spacing:1px">LIVE</span>
+
+  <div class="sep"></div>
+  <div class="mode-toggle">
+    <button class="mbtn on" id="btn-cdx" onclick="setMode('cdx')">CDX v2</button>
+    <button class="mbtn trad" id="btn-trad" onclick="setMode('traditional')">TRADITIONAL</button>
+  </div>
+</header>
+
+<!-- ═══════════════════════ MAIN ═══════════════════════ -->
+<div class="main">
+
+  <!-- ── LEFT: FLOOR MAP + THERMAL DEBT ── -->
+  <div class="panel">
+    <div class="ph"><span class="pt">FLOOR MAP</span><span class="pm">24 RACKS · 6×4</span></div>
+    <div class="twarn" id="twarn">⚠ TRADITIONAL MODE — THERMAL SCHEDULING DISABLED</div>
+    <div class="floor">
+      <div class="rgrid" id="rgrid"></div>
+    </div>
+    <div class="tdebt">
+      <div class="tsub">▲ THERMAL DEBT LEDGER</div>
+      <div class="debt-row" id="debt-row"></div>
+      <div class="debtfoot">
+        <span>TOTAL: <span id="total-debt" style="color:var(--amber)">0</span> UNITS</span>
+        <span>COOL RATE: <span id="cool-rate" style="color:var(--cyan)">—</span></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── CENTER: METRICS + CHARTS + TIMELINE ── -->
+  <div class="panel">
+    <div class="mrow">
+      <div class="mcard pw">
+        <div class="mlabel">POWER DRAW</div>
+        <div><span class="mval" id="m-pw">0</span><span class="munit">kW</span></div>
+        <div class="mdelta" id="m-pw-d">—</div>
+      </div>
+      <div class="mcard cp">
+        <div class="mlabel">AVG CPU UTIL</div>
+        <div><span class="mval" id="m-cp">0</span><span class="munit">%</span></div>
+        <div class="mdelta" id="m-cp-d">—</div>
+      </div>
+      <div class="mcard tm">
+        <div class="mlabel">AVG TEMP</div>
+        <div><span class="mval" id="m-tm">0</span><span class="munit">°C</span></div>
+        <div class="mdelta" id="m-tm-d">—</div>
+      </div>
+      <div class="mcard wt">
+        <div class="mlabel">WATER COOLING</div>
+        <div><span class="mval" id="m-wt">0</span><span class="munit">L/hr</span></div>
+        <div class="mdelta">PUE <span id="m-pue" style="color:var(--text-bright)">1.00</span></div>
+      </div>
+    </div>
+
+    <div class="charts">
+      <div class="chpanel">
+        <div class="chlabel">POWER CONSUMPTION (kW) — ROLLING 60s</div>
+        <canvas class="chcanvas" id="pw-chart"></canvas>
+      </div>
+      <div class="chpanel">
+        <div class="chlabel">CPU UTILIZATION (%) — ROLLING 60s</div>
+        <canvas class="chcanvas" id="cp-chart"></canvas>
+      </div>
+    </div>
+
+    <div class="ptimeline">
+      <div class="ptitle">PULSE EXECUTION TIMELINE</div>
+      <div class="plist" id="plist"></div>
+    </div>
+  </div>
+
+  <!-- ── RIGHT: EU LOG + INTENT QUEUE ── -->
+  <div class="panel">
+    <div class="ph"><span class="pt">EU AUDIT LOG</span><span class="pm" id="eu-count">0 EUs</span></div>
+    <div class="eulog" id="eulog"></div>
+    <div class="ph" style="border-top:1px solid var(--border);margin-top:auto;border-bottom:none">
+      <span class="pt amber">INTENT QUEUE</span><span class="pm" id="iq-status">IDLE</span>
+    </div>
+    <div class="iqueue" id="iqueue">
+      <div class="iitem">NO PENDING INTENTS</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══════════════════════ FOOTER ═══════════════════════ -->
+<footer class="ftr">
+  <span class="flabel">INJECT WORKLOAD ▶</span>
+  <button class="wbtn" onclick="inject('inference')"><span class="wdot" style="background:var(--cyan)"></span>INFERENCE</button>
+  <button class="wbtn" onclick="inject('pipeline')"><span class="wdot" style="background:var(--blue)"></span>PIPELINE</button>
+  <button class="wbtn" onclick="inject('security')"><span class="wdot" style="background:var(--gold)"></span>SECURITY SCAN</button>
+  <button class="wbtn" onclick="inject('ml_train')"><span class="wdot" style="background:var(--purple)"></span>ML TRAIN</button>
+  <button class="wbtn emg" onclick="inject('emergency')"><span class="wdot" style="background:var(--red)"></span>EMERGENCY</button>
+  <div class="sep"></div>
+  <button class="autobtn" id="autobtn" onclick="toggleAuto()">⏵ AUTO</button>
+  <span class="fstatus" id="fstatus">CDX v2 RUNTIME ONLINE — INJECT A WORKLOAD OR ENABLE AUTO</span>
+</footer>
+
+<div class="tip" id="tip"></div>
+
+<!-- ═══════════════════════ ENGINE ═══════════════════════ -->
+<script>
+// ════════════════════════════════════════════════
+//  CONSTANTS & STATE
+// ════════════════════════════════════════════════
+const N = 24, COLS = 6, ROWS = 4, HLEN = 60;
+let mode = 'cdx';
+let autoRun = false, autoTimer = null, tickTimer = null, iqTimer = null;
+let pulseN = 0, euN = 0, failN = 0, alertN = 0;
+let euLog = [], pulseLog = [];
+let pwHist = new Array(HLEN).fill(0);
+let cpHist = new Array(HLEN).fill(0);
+let lastPw = 0, lastCp = 0, lastTm = 0;
+let racks = [];
+
+// ════════════════════════════════════════════════
+//  RACK INIT
+// ════════════════════════════════════════════════
+function initRacks() {
+  racks = Array.from({length: N}, (_, i) => ({
+    id: i,
+    type: i < 16 ? 'compute' : i < 20 ? 'storage' : 'network',
+    cpu:  8  + Math.random() * 12,
+    ram:  22 + Math.random() * 20,
+    temp: 21 + Math.random() * 6,
+    power: 1.8 + Math.random() * 2,
+    thermalDebt: 0,
+    status: 'idle',
+    failures: 0
+  }));
+}
+
+// ════════════════════════════════════════════════
+//  WORKLOAD DEFINITIONS
+// ════════════════════════════════════════════════
+const WL = {
+  inference: { name:'INFERENCE',   color:'#00e5cc', cpu:16,  heat:3.5, pwr:3.0, par:4, pri:'NORMAL',   maxTemp:72, maxCpu:80 },
+  pipeline:  { name:'PIPELINE',    color:'#4499ff', cpu:26,  heat:7.0, pwr:5.0, par:6, pri:'NORMAL',   maxTemp:70, maxCpu:85 },
+  security:  { name:'SECURITY',    color:'#f0c040', cpu:11,  heat:2.0, pwr:1.8, par:2, pri:'HIGH',     maxTemp:75, maxCpu:75 },
+  ml_train:  { name:'ML TRAIN',    color:'#a060ff', cpu:38,  heat:10,  pwr:7.5, par:5, pri:'NORMAL',   maxTemp:65, maxCpu:90 },
+  emergency: { name:'EMERGENCY',   color:'#ff3355', cpu:45,  heat:14,  pwr:9.0, par:8, pri:'CRITICAL', maxTemp:99, maxCpu:99 },
+};
+
+// ════════════════════════════════════════════════
+//  CDX v2 THERMAL-AWARE SCHEDULER
+// ════════════════════════════════════════════════
+function scheduleCDX(wl) {
+  // Filter: thermal headroom + CPU budget + debt ceiling
+  return racks
+    .filter(r => r.type === 'compute'
+              && r.cpu  < wl.maxCpu
+              && r.temp < wl.maxTemp
+              && r.thermalDebt < 50)
+    .sort((a, b) => {
+      // Composite score: weight thermal + debt equally
+      const scoreA = (a.temp * 0.6) + (a.thermalDebt * 0.4) + (a.cpu * 0.1);
+      const scoreB = (b.temp * 0.6) + (b.thermalDebt * 0.4) + (b.cpu * 0.1);
+      return scoreA - scoreB;   // lowest score = coolest + least debt
+    })
+    .slice(0, wl.par);
+}
+
+// ════════════════════════════════════════════════
+//  TRADITIONAL GREEDY SCHEDULER (no thermal)
+// ════════════════════════════════════════════════
+function scheduleTraditional(wl) {
+  return racks
+    .filter(r => r.type === 'compute' && r.cpu < 96)
+    .sort((a, b) => a.cpu - b.cpu)   // pure CPU greed, ignores heat
+    .slice(0, wl.par);
+}
+
+// ════════════════════════════════════════════════
+//  EXECUTION UNIT FACTORY
+// ════════════════════════════════════════════════
+function makeEU(rack, wl, cascade) {
+  const id = ++euN;
+  const headroom = (wl.maxTemp - rack.temp).toFixed(1);
+  const cpuFree  = (100 - rack.cpu).toFixed(1);
+  const status   = cascade ? 'failed' : 'completed';
+
+  const reason = mode === 'cdx' ? {
+    mode: 'CDX-v2',
+    rack: `R${String(rack.id).padStart(2,'0')}`,
+    thermalHeadroom: `${headroom}°C`,
+    cpuBudget: `${cpuFree}%`,
+    thermalDebt: rack.thermalDebt.toFixed(0),
+    pulse: pulseN,
+    decision: rack.thermalDebt > 20
+      ? 'Debt-aware reroute → cooler node selected'
+      : 'Thermal-first allocation → minimal heat cost'
+  } : {
+    mode: 'TRADITIONAL',
+    rack: `R${String(rack.id).padStart(2,'0')}`,
+    cpuFree: `${cpuFree}%`,
+    tempIgnored: `${rack.temp.toFixed(1)}°C (unmonitored)`,
+    pulse: pulseN,
+    decision: cascade
+      ? '🔴 CASCADE FAILURE — thermal overrun undetected'
+      : 'Greedy CPU allocation — no thermal check'
+  };
+
+  return { id, rackId: rack.id, workload: wl.name, color: wl.color, status, reason, cascade };
+}
+
+// ════════════════════════════════════════════════
+//  PULSE EXECUTION
+// ════════════════════════════════════════════════
+function executePulse(key) {
+  pulseN++;
+  const wl  = WL[key];
+  const t0  = performance.now();
+  const sel = mode === 'cdx' ? scheduleCDX(wl) : scheduleTraditional(wl);
+  const eus = [];
+
+  sel.forEach(rack => {
+    // Cascade: traditional + already hot
+    const cascade = (mode === 'traditional' && rack.temp > 78);
+    if (cascade) { failN++; alertN++; rack.failures++; }
+
+    const eu = makeEU(rack, wl, cascade);
+    eus.push(eu);
+    euLog.unshift(eu);
+
+    // Apply workload heat & CPU
+    const jitter = () => (Math.random() - 0.5) * 3;
+    rack.cpu   = Math.min(100, rack.cpu  + wl.cpu  + jitter());
+    rack.temp  = Math.min(95,  rack.temp + wl.heat + Math.random() * 2);
+    rack.power = Math.min(25,  rack.power + wl.pwr + jitter());
+    rack.thermalDebt += wl.heat;
+    rack.status = rack.temp > 80 ? 'hot' : 'active';
+
+    // Visual flash
+    const el = document.getElementById(`rack-${rack.id}`);
+    if (el) {
+      el.classList.remove('fired','failed');
+      void el.offsetWidth;
+      el.classList.add(cascade ? 'failed' : 'fired');
+    }
+  });
+
+  const ms = (performance.now() - t0).toFixed(2);
+
+  pulseLog.unshift({ id: pulseN, name: wl.name, color: wl.color, eus: eus.length, ms, mode });
+  if (pulseLog.length > 7) pulseLog.pop();
+  if (euLog.length > 100) euLog.length = 100;
+
+  showIntentQueue(key, wl, eus.length);
+  updateUI();
+  return { id: pulseN, name: wl.name, eus: eus.length, ms };
+}
+
+// ════════════════════════════════════════════════
+//  TICK — natural cooling & drift
+// ════════════════════════════════════════════════
+function tick() {
+  const coolRate = mode === 'cdx' ? 1.3 : 0.55;   // CDX cools faster (predictive)
+  racks.forEach(r => {
+    r.cpu   = Math.max(5,   r.cpu   - 2.2 + (Math.random()-.5)*1.5);
+    r.temp  = Math.max(19,  r.temp  - coolRate + (Math.random()-.5)*.4);
+    r.power = Math.max(1.2, r.power - 0.5 + (Math.random()-.4)*.3);
+    r.thermalDebt = Math.max(0, r.thermalDebt - 1.8);
+    if (r.cpu < 14) r.status = 'idle';
+    else if (r.temp > 76) r.status = 'hot';
+    else r.status = 'active';
+  });
+
+  const totalPw = racks.reduce((s,r)=>s+r.power, 0);
+  const avgCp   = racks.reduce((s,r)=>s+r.cpu,   0) / N;
+  pwHist.push(totalPw); cpHist.push(avgCp);
+  if (pwHist.length > HLEN) pwHist.shift();
+  if (cpHist.length > HLEN) cpHist.shift();
+
+  updateUI();
+}
+
+// ════════════════════════════════════════════════
+//  INJECT & MODE
+// ════════════════════════════════════════════════
+function inject(key) {
+  const p = executePulse(key);
+  setStatus(`PULSE P-${String(p.id).padStart(3,'0')} · ${p.name} · ${p.eus} EUs dispatched · ${p.ms}ms`);
+}
+
+function setMode(m) {
+  mode = m;
+  document.getElementById('btn-cdx').classList.toggle('on', m==='cdx');
+  document.getElementById('btn-trad').classList.toggle('on', m==='traditional');
+  document.getElementById('twarn').classList.toggle('show', m==='traditional');
+  // Reset sim
+  failN = alertN = pulseN = euN = 0;
+  euLog = []; pulseLog = [];
+  pwHist.fill(0); cpHist.fill(0);
+  initRacks(); buildFloor(); buildDebt(); updateUI();
+  setStatus(`MODE: ${m.toUpperCase()} — ${m==='cdx'?'Thermal-first scheduling ACTIVE':'Greedy CPU scheduling — thermal unmonitored'}`);
+}
+
+function toggleAuto() {
+  autoRun = !autoRun;
+  const btn = document.getElementById('autobtn');
+  if (autoRun) {
+    btn.classList.add('on'); btn.textContent = '⏹ AUTO';
+    autoTimer = setInterval(() => {
+      const keys = ['inference','pipeline','security','ml_train'];
+      inject(keys[Math.floor(Math.random()*keys.length)]);
+    }, 2200);
+  } else {
+    btn.classList.remove('on'); btn.textContent = '⏵ AUTO';
+    clearInterval(autoTimer);
+  }
+}
+
+// ════════════════════════════════════════════════
+//  INTENT QUEUE DISPLAY
+// ════════════════════════════════════════════════
+function showIntentQueue(key, wl, dispatched) {
+  const iq = document.getElementById('iqueue');
+  document.getElementById('iq-status').textContent = '1 PROCESSING';
+  iq.innerHTML = `
+    <div class="iitem">▶ <span>${wl.name}</span> · PULSE P-${String(pulseN).padStart(3,'0')}</div>
+    <div class="iitem">PRIORITY: <span>${wl.pri}</span></div>
+    <div class="iitem">EUs DISPATCHED: <span>${dispatched}</span></div>
+    <div class="iitem">SCHEDULER: <span style="color:${mode==='cdx'?'var(--cyan)':'var(--amber)'}">${mode.toUpperCase()}</span></div>
+  `;
+  clearTimeout(iqTimer);
+  iqTimer = setTimeout(() => {
+    iq.innerHTML = '<div class="iitem">NO PENDING INTENTS</div>';
+    document.getElementById('iq-status').textContent = 'IDLE';
+  }, 1800);
+}
+
+function setStatus(msg) { document.getElementById('fstatus').textContent = msg; }
+
+// ════════════════════════════════════════════════
+//  RENDER — FLOOR MAP
+// ════════════════════════════════════════════════
+function tempColor(t) {
+  t = Math.max(18, Math.min(95, t));
+  if (t < 32)  { const f=(t-18)/14;  return `rgba(${Math.round(f*20)},${Math.round(140+f*60)},${Math.round(200-f*30)},0.65)` }
+  if (t < 52)  { const f=(t-32)/20;  return `rgba(${Math.round(20+f*160)},${Math.round(200-f*60)},${Math.round(170-f*120)},0.72)` }
+  if (t < 70)  { const f=(t-52)/18;  return `rgba(${Math.round(180+f*75)},${Math.round(140-f*110)},50,0.78)` }
+  /* hot */     { const f=Math.min(1,(t-70)/25); return `rgba(255,${Math.round(40-f*30)},${Math.round(50-f*40)},0.85)` }
+}
+
+function buildFloor() {
+  const grid = document.getElementById('rgrid');
+  grid.innerHTML = '';
+  racks.forEach(r => {
+    const el = document.createElement('div');
+    el.className = 'rack';
+    el.id = `rack-${r.id}`;
+    el.innerHTML = `
+      <span class="rack-id">R${String(r.id).padStart(2,'0')}</span>
+      <span class="rack-temp" id="rt-${r.id}">${r.temp.toFixed(0)}°</span>
+      <div class="rack-bar"><div class="rack-bar-fill" id="rb-${r.id}" style="width:${r.cpu}%"></div></div>
+    `;
+    el.addEventListener('mouseenter', e => showTip(e, r));
+    el.addEventListener('mouseleave', hideTip);
+    el.addEventListener('mousemove', moveTip);
+    grid.appendChild(el);
+  });
+}
+
+function updateFloor() {
+  racks.forEach(r => {
+    const el = document.getElementById(`rack-${r.id}`);
+    if (!el) return;
+    el.style.background = tempColor(r.temp);
+    el.style.borderColor = r.status==='hot'  ? 'rgba(255,128,64,.6)' :
+                           r.status==='active'? 'rgba(0,229,204,.25)' :
+                           'rgba(255,255,255,.04)';
+    const rt = document.getElementById(`rt-${r.id}`);
+    if (rt) { rt.textContent = `${r.temp.toFixed(0)}°`; rt.style.color = r.temp>75?'var(--amber)':r.temp>60?'var(--gold)':'var(--text)'; }
+    const rb = document.getElementById(`rb-${r.id}`);
+    if (rb) { rb.style.width=`${r.cpu}%`; rb.style.background=r.cpu>80?'var(--amber)':'var(--cyan)'; }
+  });
+}
+
+// ════════════════════════════════════════════════
+//  RENDER — THERMAL DEBT
+// ════════════════════════════════════════════════
+function buildDebt() {
+  const row = document.getElementById('debt-row');
+  row.innerHTML = '';
+  racks.forEach((_, i) => {
+    const d = document.createElement('div');
+    d.className = 'dbar';
+    d.innerHTML = `
+      <div class="dbar-wrap"><div class="dbar-fill" id="db-${i}" style="height:0%"></div></div>
+      <div class="dlabel">${String(i).padStart(2,'0')}</div>
+    `;
+    row.appendChild(d);
+  });
+}
+
+function updateDebt() {
+  racks.forEach((r, i) => {
+    const el = document.getElementById(`db-${i}`);
+    if (el) el.style.height = `${Math.min(100, r.thermalDebt/60*100)}%`;
+  });
+  const total = racks.reduce((s,r)=>s+r.thermalDebt,0);
+  document.getElementById('total-debt').textContent = total.toFixed(0);
+  document.getElementById('cool-rate').textContent = mode==='cdx' ? '1.3°/s' : '0.6°/s';
+}
+
+// ════════════════════════════════════════════════
+//  RENDER — HEADER & METRICS
+// ════════════════════════════════════════════════
+function updateHeader() {
+  const avgCp  = racks.reduce((s,r)=>s+r.cpu, 0)/N;
+  const totalPw = racks.reduce((s,r)=>s+r.power, 0);
+  const hotN   = racks.filter(r=>r.temp>75).length;
+  document.getElementById('h-pulse').textContent = String(pulseN).padStart(4,'0');
+  document.getElementById('h-cpu').textContent   = avgCp.toFixed(0)+'%';
+  document.getElementById('h-power').textContent = totalPw.toFixed(0)+'kW';
+  const thEl = document.getElementById('h-therm');
+  if (hotN>4) { thEl.textContent='CRITICAL'; thEl.className='hot'; }
+  else if (hotN>1) { thEl.textContent='WARNING'; thEl.className='warn'; }
+  else { thEl.textContent='NOMINAL'; thEl.className='ok'; }
+  const fEl = document.getElementById('h-fails');
+  fEl.textContent = failN;
+  fEl.className = failN>0 ? 'hot' : 'ok';
+  const badge = document.getElementById('alert-badge');
+  badge.classList.toggle('show', alertN>0);
+  document.getElementById('alert-n').textContent = alertN;
+}
+
+function updateMetrics() {
+  const avgCp  = racks.reduce((s,r)=>s+r.cpu, 0)/N;
+  const totalPw = racks.reduce((s,r)=>s+r.power, 0);
+  const avgTm  = racks.reduce((s,r)=>s+r.temp, 0)/N;
+  const thermalMult = mode==='traditional' ? 1.42 : 1.0;
+  const water = totalPw * 3.7 * thermalMult;
+  const pue   = Math.max(1, 1 + (water/(totalPw*10+1)));
+
+  document.getElementById('m-pw').textContent = totalPw.toFixed(1);
+  document.getElementById('m-cp').textContent = avgCp.toFixed(1);
+  document.getElementById('m-tm').textContent = avgTm.toFixed(1);
+  document.getElementById('m-wt').textContent = water.toFixed(0);
+  document.getElementById('m-pue').textContent = pue.toFixed(2);
+
+  // Deltas
+  const pwD = document.getElementById('m-pw-d');
+  const diff = totalPw - lastPw;
+  pwD.textContent = diff>0.5?`↑ ${diff.toFixed(1)}kW`:diff<-0.5?`↓ ${Math.abs(diff).toFixed(1)}kW`:'— stable';
+  pwD.className = 'mdelta '+(diff>0.5?'up':diff<-0.5?'dn':'');
+  lastPw = totalPw; lastCp = avgCp; lastTm = avgTm;
+}
+
+// ════════════════════════════════════════════════
+//  RENDER — PULSE TIMELINE
+// ════════════════════════════════════════════════
+function updatePulseTimeline() {
+  const list = document.getElementById('plist');
+  list.innerHTML = '';
+  pulseLog.slice(0,6).forEach(p => {
+    const w = Math.min(100,(parseFloat(p.ms)/35)*100);
+    const div = document.createElement('div');
+    div.className = 'pentry';
+    div.innerHTML = `
+      <span style="color:var(--muted);width:38px">P-${String(p.id).padStart(3,'0')}</span>
+      <span style="color:var(--text);width:72px;font-size:9px">${p.name}</span>
+      <div class="pbar"><div class="pbarfill" style="width:${w}%;background:${p.color}"></div></div>
+      <span style="color:var(--muted);width:26px;text-align:right">${p.eus}EU</span>
+      <span style="color:${p.mode==='traditional'?'var(--amber)':'var(--cyan)'};width:38px;text-align:right">${p.ms}ms</span>
+    `;
+    list.appendChild(div);
+  });
+}
+
+// ════════════════════════════════════════════════
+//  RENDER — EU AUDIT LOG
+// ════════════════════════════════════════════════
+function updateEULog() {
+  const log = document.getElementById('eulog');
+  log.innerHTML = '';
+  euLog.slice(0,40).forEach(eu => {
+    const r = eu.reason;
+    const div = document.createElement('div');
+    div.className = `eucard ${eu.status}`;
+    div.innerHTML = `
+      <div class="eurow">
+        <span class="euid ${eu.status}" style="border-left:2px solid ${eu.color};padding-left:5px">
+          EU-${String(eu.id).padStart(4,'0')}
+        </span>
+        <span style="font-family:var(--font-m);font-size:9px;color:var(--muted)">${eu.workload}</span>
+        <span class="eubadge ${eu.status}">${eu.status.toUpperCase()}</span>
+      </div>
+      <div class="eureason">
+        rack:<span>${r.rack}</span> ·
+        ${r.thermalHeadroom?`thermal:<span>${r.thermalHeadroom}</span> · `:''}
+        cpu:<span>${r.cpuBudget||r.cpuFree}</span>
+        ${r.thermalDebt?` · debt:<span>${r.thermalDebt}</span>`:''}
+        <br>${eu.cascade?`<em>${r.decision}</em>`:`<span style="color:var(--muted)">${r.decision}</span>`}
+      </div>
+    `;
+    log.appendChild(div);
+  });
+  document.getElementById('eu-count').textContent = `${euN} EUs`;
+}
+
+// ════════════════════════════════════════════════
+//  RENDER — CHARTS
+// ════════════════════════════════════════════════
+function drawChart(id, data, color, mn, mx) {
+  const cv = document.getElementById(id);
+  if (!cv) return;
+  const W = cv.parentElement.offsetWidth - 24;
+  const H = cv.parentElement.offsetHeight - 36;
+  if (W<=0||H<=0) return;
+  cv.width=W; cv.height=H;
+  const ctx = cv.getContext('2d');
+  ctx.clearRect(0,0,W,H);
+
+  // Gridlines
+  ctx.strokeStyle='rgba(26,37,64,.7)'; ctx.lineWidth=1;
+  for (let i=0;i<=4;i++) { const y=H*i/4; ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
+
+  if (data.filter(v=>v>0).length < 2) return;
+
+  const pts = data.map((v,i)=>({
+    x:(i/(HLEN-1))*W,
+    y:H-((Math.max(mn,Math.min(mx,v))-mn)/(mx-mn))*H
+  }));
+
+  // Fill
+  ctx.beginPath();
+  ctx.moveTo(pts[0].x,H);
+  ctx.lineTo(pts[0].x,pts[0].y);
+  pts.slice(1).forEach(p=>ctx.lineTo(p.x,p.y));
+  ctx.lineTo(pts[pts.length-1].x,H);
+  ctx.closePath();
+  const g=ctx.createLinearGradient(0,0,0,H);
+  g.addColorStop(0,color+'44'); g.addColorStop(1,color+'06');
+  ctx.fillStyle=g; ctx.fill();
+
+  // Line
+  ctx.beginPath();
+  ctx.moveTo(pts[0].x,pts[0].y);
+  pts.slice(1).forEach(p=>ctx.lineTo(p.x,p.y));
+  ctx.strokeStyle=color; ctx.lineWidth=1.5; ctx.stroke();
+
+  // Live value
+  const last=data[data.length-1];
+  ctx.font=`bold 11px 'Share Tech Mono'`;
+  ctx.fillStyle=color;
+  ctx.fillText(last.toFixed(1),5,14);
+}
+
+// ════════════════════════════════════════════════
+//  TOOLTIP
+// ════════════════════════════════════════════════
+function showTip(e, r) {
+  const t = document.getElementById('tip');
+  t.innerHTML = `
+    <div style="color:var(--cyan);margin-bottom:4px;font-weight:bold">R${String(r.id).padStart(2,'0')} · ${r.type.toUpperCase()}</div>
+    CPU&nbsp;&nbsp;: <span style="color:var(--text-bright)">${r.cpu.toFixed(1)}%</span><br>
+    RAM&nbsp;&nbsp;: <span style="color:var(--text-bright)">${r.ram.toFixed(1)}%</span><br>
+    TEMP&nbsp;: <span style="color:${r.temp>75?'var(--amber)':'var(--green)'}">${r.temp.toFixed(1)}°C</span><br>
+    POWER: <span style="color:var(--text-bright)">${r.power.toFixed(2)}kW</span><br>
+    DEBT&nbsp;: <span style="color:var(--amber)">${r.thermalDebt.toFixed(0)}</span><br>
+    FAILS: <span style="color:${r.failures>0?'var(--red)':'var(--muted)'}">${r.failures}</span><br>
+    STATE: <span style="color:${r.status==='hot'?'var(--red)':r.status==='active'?'var(--cyan)':'var(--muted)'}">${r.status.toUpperCase()}</span>
+  `;
+  t.classList.add('show');
+  moveTip(e);
+}
+function hideTip() { document.getElementById('tip').classList.remove('show'); }
+function moveTip(e) { const t=document.getElementById('tip'); t.style.left=`${e.clientX+14}px`; t.style.top=`${e.clientY-20}px`; }
+
+// ════════════════════════════════════════════════
+//  MASTER UPDATE
+// ════════════════════════════════════════════════
+function updateUI() {
+  updateFloor();
+  updateDebt();
+  updateHeader();
+  updateMetrics();
+  updatePulseTimeline();
+  updateEULog();
+  drawChart('pw-chart', pwHist, '#ff8040', 0, 180);
+  drawChart('cp-chart', cpHist, '#00e5cc', 0, 100);
+}
+
+// ════════════════════════════════════════════════
+//  BOOT
+// ════════════════════════════════════════════════
+function boot() {
+  initRacks();
+  buildFloor();
+  buildDebt();
+  updateUI();
+  tickTimer = setInterval(tick, 1500);
+  setStatus('CDX v2 RUNTIME ONLINE — INJECT A WORKLOAD OR ENABLE AUTO');
+}
+
+window.addEventListener('load', boot);
+window.addEventListener('resize', updateUI);
+</script>
+</body>
+</html>
