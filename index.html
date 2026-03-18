@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CDX v2 Runtime</title>
+<title>CDX v2 Runtime · Ollama Edition</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&family=IBM+Plex+Sans:wght@300;400;500&display=swap">
 <style>
@@ -11,172 +11,208 @@
 :root{
   --bg:#050810;--surface:#0a0e1a;--surface2:#101522;--surface3:#161d2c;
   --border:#1a2540;--border2:#222f4a;
-  --cyan:#00e5cc;--cyan-dim:#007d70;--cyan-glow:rgba(0,229,204,0.15);
-  --amber:#ff8040;--amber-dim:#7a3a18;
-  --gold:#f0c040;--red:#ff3355;--green:#00e87a;--blue:#4499ff;
-  --purple:#a060ff;
+  --cyan:#00e5cc;--cyan-dim:#007d70;--cyan-glow:rgba(0,229,204,0.12);
+  --amber:#ff8040;--gold:#f0c040;--red:#ff3355;--green:#00e87a;--blue:#4499ff;--purple:#a060ff;
   --text:#b0c8e0;--text-bright:#deeeff;--muted:#3d5570;
   --font-d:'Orbitron',monospace;--font-m:'Share Tech Mono',monospace;--font-b:'IBM Plex Sans',sans-serif;
 }
 body{background:var(--bg);color:var(--text);font-family:var(--font-b);font-size:12px;height:100vh;overflow:hidden;display:flex;flex-direction:column}
-body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,0.025) 3px,rgba(0,0,0,0.025) 4px);pointer-events:none;z-index:9999}
+body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,.02) 3px,rgba(0,0,0,.02) 4px);pointer-events:none;z-index:9000}
+
+/* ── OLLAMA STATUS BAR ── */
+#ollama-bar{display:flex;align-items:center;gap:10px;padding:5px 14px;background:rgba(0,229,204,.04);border-bottom:1px solid rgba(0,229,204,.12);flex-shrink:0;font-family:var(--font-m);font-size:9px;letter-spacing:1px}
+#ollama-bar.warn{background:rgba(255,128,64,.04);border-color:rgba(255,128,64,.2)}
+#ollama-bar.err{background:rgba(255,51,85,.05);border-color:rgba(255,51,85,.2)}
+.odot{width:7px;height:7px;border-radius:50%;flex-shrink:0;transition:background .4s}
+.odot.ok{background:var(--cyan);box-shadow:0 0 8px var(--cyan);animation:pulse-dot 2s ease-in-out infinite}
+.odot.thinking{background:var(--amber);box-shadow:0 0 8px var(--amber);animation:pulse-dot .6s ease-in-out infinite}
+.odot.err{background:var(--red)}
+@keyframes pulse-dot{0%,100%{opacity:1}50%{opacity:.3}}
+#o-status{color:var(--text)}
+#o-models{color:var(--muted)}
+.olink{color:var(--cyan);cursor:pointer;text-decoration:underline}
+.olink:hover{color:var(--text-bright)}
 
 /* ── HEADER ── */
-.hdr{display:flex;align-items:center;gap:16px;padding:0 16px;height:56px;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0;position:relative;overflow:hidden}
-.hdr::after{content:'';position:absolute;bottom:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent 0%,var(--cyan) 30%,var(--cyan) 70%,transparent 100%);opacity:.2}
-.logo{display:flex;align-items:center;gap:10px}
-.logo-hex{width:28px;height:28px;clip-path:polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%);background:linear-gradient(135deg,var(--cyan-glow),rgba(0,229,204,0.05));border:1.5px solid var(--cyan);display:flex;align-items:center;justify-content:center}
-.logo-hex svg{width:12px;height:12px}
-.brand-name{font-family:var(--font-d);font-size:12px;font-weight:900;letter-spacing:4px;color:var(--text-bright)}
-.brand-ver{font-family:var(--font-m);font-size:9px;color:var(--cyan);letter-spacing:2px;margin-top:2px}
-.sep{width:1px;height:28px;background:var(--border2);flex-shrink:0}
-.hchip{display:flex;flex-direction:column;gap:2px;flex-shrink:0}
-.hchip label{font-family:var(--font-m);font-size:8px;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase}
-.hchip value{font-family:var(--font-m);font-size:15px;color:var(--text-bright);line-height:1}
-.hchip value.hot{color:var(--red)}
-.hchip value.warn{color:var(--amber)}
-.hchip value.ok{color:var(--green)}
-.pdot{width:7px;height:7px;border-radius:50%;background:var(--cyan);box-shadow:0 0 10px var(--cyan);animation:pblink 1.2s ease-in-out infinite;flex-shrink:0}
-@keyframes pblink{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.3;transform:scale(.7)}}
+.hdr{display:flex;align-items:center;gap:14px;padding:0 14px;height:52px;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0;position:relative}
+.hdr::after{content:'';position:absolute;bottom:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--cyan) 30%,var(--cyan) 70%,transparent);opacity:.18}
+.logo{display:flex;align-items:center;gap:9px}
+.logo-hex{width:26px;height:26px;clip-path:polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%);background:rgba(0,229,204,.07);border:1.5px solid var(--cyan);display:flex;align-items:center;justify-content:center}
+.brand-name{font-family:var(--font-d);font-size:11px;font-weight:900;letter-spacing:4px;color:var(--text-bright)}
+.brand-ver{font-family:var(--font-m);font-size:8px;color:var(--cyan);letter-spacing:2px;margin-top:1px}
+.sep{width:1px;height:24px;background:var(--border2);flex-shrink:0}
+.hchip{display:flex;flex-direction:column;gap:1px;flex-shrink:0}
+.hchip label{font-family:var(--font-m);font-size:7.5px;color:var(--muted);letter-spacing:1.5px}
+.hchip value{font-family:var(--font-m);font-size:14px;color:var(--text-bright)}
+.hchip value.hot{color:var(--red)}.hchip value.warn{color:var(--amber)}.hchip value.ok{color:var(--green)}
+.pdot{width:7px;height:7px;border-radius:50%;background:var(--cyan);box-shadow:0 0 8px var(--cyan);animation:pulse-dot 1.4s ease-in-out infinite;flex-shrink:0}
 .mode-toggle{display:flex;gap:1px;border:1px solid var(--border2);border-radius:3px;overflow:hidden;margin-left:auto}
-.mbtn{background:var(--surface2);border:none;color:var(--muted);font-family:var(--font-m);font-size:9px;letter-spacing:1.5px;padding:5px 14px;cursor:pointer;transition:all .2s;text-transform:uppercase}
+.mbtn{background:var(--surface2);border:none;color:var(--muted);font-family:var(--font-m);font-size:8.5px;letter-spacing:1.5px;padding:5px 12px;cursor:pointer;transition:all .2s;text-transform:uppercase}
 .mbtn.on{background:var(--cyan);color:var(--bg);font-weight:bold}
 .mbtn.trad.on{background:var(--amber);color:var(--bg)}
-.abadge{display:none;align-items:center;gap:4px;background:rgba(255,51,85,.12);border:1px solid rgba(255,51,85,.4);border-radius:3px;padding:2px 7px;font-family:var(--font-m);font-size:9px;color:var(--red)}
-.abadge.show{display:flex}
+#alert-badge{display:none;align-items:center;gap:4px;background:rgba(255,51,85,.1);border:1px solid rgba(255,51,85,.35);border-radius:3px;padding:2px 7px;font-family:var(--font-m);font-size:8.5px;color:var(--red)}
+#alert-badge.show{display:flex}
 
 /* ── MAIN GRID ── */
-.main{display:grid;grid-template-columns:270px 1fr 288px;gap:1px;background:var(--border);flex:1;overflow:hidden}
+.main{display:grid;grid-template-columns:260px 1fr 290px;gap:1px;background:var(--border);flex:1;overflow:hidden;min-height:0}
 .panel{background:var(--surface);display:flex;flex-direction:column;overflow:hidden}
-
-/* ── PANEL HEADER ── */
-.ph{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-bottom:1px solid var(--border);background:var(--surface2);flex-shrink:0}
-.pt{font-family:var(--font-d);font-size:8px;letter-spacing:3px;color:var(--cyan)}
+.ph{display:flex;align-items:center;justify-content:space-between;padding:7px 11px;border-bottom:1px solid var(--border);background:var(--surface2);flex-shrink:0}
+.pt{font-family:var(--font-d);font-size:7.5px;letter-spacing:3px;color:var(--cyan)}
 .pt.amber{color:var(--amber)}
-.pm{font-family:var(--font-m);font-size:10px;color:var(--muted)}
+.pm{font-family:var(--font-m);font-size:9px;color:var(--muted)}
 
 /* ── FLOOR MAP ── */
-.floor{padding:10px;flex:1;overflow:hidden;min-height:0}
+.floor{padding:8px;flex:1;overflow:hidden;min-height:0}
 .rgrid{display:grid;grid-template-columns:repeat(6,1fr);grid-template-rows:repeat(4,1fr);gap:3px;height:100%}
-.rack{border-radius:3px;border:1px solid rgba(255,255,255,.04);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:background .5s ease,border-color .3s ease;position:relative;overflow:hidden}
-.rack::before{content:'';position:absolute;inset:0;background:repeating-linear-gradient(90deg,transparent,transparent 2px,rgba(255,255,255,.04) 2px,rgba(255,255,255,.04) 3px)}
-.rack-id{font-family:var(--font-m);font-size:8px;color:rgba(255,255,255,.35);z-index:1}
+.rack{border-radius:3px;border:1px solid rgba(255,255,255,.04);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:background .5s ease,border-color .3s;position:relative;overflow:hidden}
+.rack::before{content:'';position:absolute;inset:0;background:repeating-linear-gradient(90deg,transparent,transparent 2px,rgba(255,255,255,.035) 2px,rgba(255,255,255,.035) 3px)}
+.rack-id{font-family:var(--font-m);font-size:7.5px;color:rgba(255,255,255,.3);z-index:1}
 .rack-temp{font-family:var(--font-m);font-size:10px;font-weight:bold;z-index:1}
-.rack-bar{position:absolute;bottom:0;left:0;right:0;height:3px;background:rgba(0,0,0,.3)}
-.rack-bar-fill{height:100%;transition:width .6s ease,background .3s}
-.rack:hover{transform:scale(1.06);z-index:10;box-shadow:0 0 16px rgba(0,229,204,.25)}
-@keyframes rack-fire{0%{box-shadow:0 0 0 rgba(0,229,204,.9)}100%{box-shadow:0 0 24px rgba(0,229,204,0)}}
-@keyframes rack-fail{0%,100%{opacity:1}40%{opacity:.15}}
+.rack-bar{position:absolute;bottom:0;left:0;right:0;height:2px}
+.rack-bar-fill{height:100%;transition:width .6s,background .3s}
+.rack:hover{transform:scale(1.06);z-index:10;box-shadow:0 0 14px rgba(0,229,204,.2)}
+@keyframes rack-fire{0%{box-shadow:0 0 0 rgba(0,229,204,.9)}100%{box-shadow:0 0 22px rgba(0,229,204,0)}}
+@keyframes rack-fail{0%,100%{opacity:1}40%{opacity:.12}}
 .rack.fired{animation:rack-fire .7s ease-out}
 .rack.failed{animation:rack-fail .5s ease-out;border-color:var(--red)!important}
 
 /* ── THERMAL DEBT ── */
-.tdebt{padding:10px 12px;border-top:1px solid var(--border);flex-shrink:0}
-.tsub{font-family:var(--font-d);font-size:7px;letter-spacing:2px;color:var(--amber);margin-bottom:7px}
-.debt-row{display:grid;grid-template-columns:repeat(6,1fr);gap:2px;margin-bottom:5px}
-.dbar{display:flex;flex-direction:column;align-items:center;gap:2px}
-.dbar-wrap{width:100%;height:22px;background:var(--surface3);border-radius:2px;overflow:hidden;display:flex;align-items:flex-end}
-.dbar-fill{width:100%;background:linear-gradient(0deg,var(--amber),var(--gold));transition:height .6s ease;border-radius:2px}
-.dlabel{font-family:var(--font-m);font-size:7px;color:var(--muted)}
+.tdebt{padding:8px 11px;border-top:1px solid var(--border);flex-shrink:0}
+.tsub{font-family:var(--font-d);font-size:7px;letter-spacing:2px;color:var(--amber);margin-bottom:6px}
+.debt-row{display:grid;grid-template-columns:repeat(6,1fr);gap:2px;margin-bottom:4px}
+.dbar{display:flex;flex-direction:column;align-items:center;gap:1px}
+.dbar-wrap{width:100%;height:20px;background:var(--surface3);border-radius:2px;overflow:hidden;display:flex;align-items:flex-end}
+.dbar-fill{width:100%;background:linear-gradient(0deg,var(--amber),var(--gold));transition:height .6s;border-radius:2px}
+.dlabel{font-family:var(--font-m);font-size:6.5px;color:var(--muted)}
 .debtfoot{font-family:var(--font-m);font-size:9px;color:var(--muted);display:flex;justify-content:space-between}
 
-/* ── CENTER METRICS ROW ── */
+/* ── CENTER METRICS ── */
 .mrow{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--border);flex-shrink:0}
-.mcard{background:var(--surface2);padding:10px 14px;position:relative;overflow:hidden}
+.mcard{background:var(--surface2);padding:9px 13px;position:relative;overflow:hidden}
 .mcard::before{content:'';position:absolute;top:0;left:0;right:0;height:2px}
-.mcard.pw::before{background:var(--amber)}
-.mcard.cp::before{background:var(--cyan)}
-.mcard.tm::before{background:var(--gold)}
-.mcard.wt::before{background:var(--blue)}
-.mlabel{font-family:var(--font-m);font-size:8px;color:var(--muted);letter-spacing:1px;margin-bottom:3px}
-.mval{font-family:var(--font-m);font-size:20px;font-weight:bold;color:var(--text-bright);line-height:1}
-.munit{font-size:10px;color:var(--muted);margin-left:1px}
-.mdelta{font-family:var(--font-m);font-size:9px;margin-top:3px;color:var(--muted)}
+.mcard.pw::before{background:var(--amber)}.mcard.cp::before{background:var(--cyan)}
+.mcard.tm::before{background:var(--gold)}.mcard.wt::before{background:var(--blue)}
+.mlabel{font-family:var(--font-m);font-size:7.5px;color:var(--muted);letter-spacing:1px;margin-bottom:2px}
+.mval{font-family:var(--font-m);font-size:19px;font-weight:bold;color:var(--text-bright);line-height:1}
+.munit{font-size:9px;color:var(--muted);margin-left:1px}
+.mdelta{font-family:var(--font-m);font-size:8.5px;margin-top:2px;color:var(--muted)}
 .mdelta.up{color:var(--amber)}.mdelta.dn{color:var(--green)}
 
 /* ── CHARTS ── */
-.charts{flex:1;display:grid;grid-template-rows:1fr 1fr;gap:1px;background:var(--border);overflow:hidden}
-.chpanel{background:var(--surface);padding:8px 12px;overflow:hidden;display:flex;flex-direction:column}
-.chlabel{font-family:var(--font-d);font-size:7px;letter-spacing:2px;color:var(--muted);margin-bottom:4px;flex-shrink:0}
-.chcanvas{flex:1;width:100%}
+.charts{flex:1;display:grid;grid-template-rows:1fr 1fr;gap:1px;background:var(--border);overflow:hidden;min-height:0}
+.chpanel{background:var(--surface);padding:7px 11px;overflow:hidden;display:flex;flex-direction:column;min-height:0}
+.chlabel{font-family:var(--font-d);font-size:7px;letter-spacing:2px;color:var(--muted);margin-bottom:3px;flex-shrink:0}
+.chcanvas{flex:1;width:100%;min-height:0}
 
 /* ── PULSE TIMELINE ── */
-.ptimeline{border-top:1px solid var(--border);padding:8px 12px;flex-shrink:0;height:106px}
-.ptitle{font-family:var(--font-d);font-size:7px;letter-spacing:2px;color:var(--cyan);margin-bottom:5px}
-.plist{display:flex;flex-direction:column;gap:3px;overflow:hidden}
-.pentry{display:flex;align-items:center;gap:6px;font-family:var(--font-m);font-size:10px}
-@keyframes sldin{from{opacity:0;transform:translateX(-8px)}to{opacity:1;transform:translateX(0)}}
+.ptimeline{border-top:1px solid var(--border);padding:7px 11px;flex-shrink:0;height:100px}
+.ptitle{font-family:var(--font-d);font-size:7px;letter-spacing:2px;color:var(--cyan);margin-bottom:4px}
+.plist{display:flex;flex-direction:column;gap:2px;overflow:hidden}
+.pentry{display:flex;align-items:center;gap:5px;font-family:var(--font-m);font-size:9.5px}
+@keyframes sldin{from{opacity:0;transform:translateX(-6px)}to{opacity:1;transform:translateX(0)}}
 .pentry{animation:sldin .3s ease}
-.pbar{flex:1;height:5px;background:var(--surface3);border-radius:2px;overflow:hidden}
+.pbar{flex:1;height:4px;background:var(--surface3);border-radius:2px;overflow:hidden}
 .pbarfill{height:100%;border-radius:2px}
 
-/* ── EU LOG ── */
+/* ── EU LOG / AI REASONING ── */
 .eulog{flex:1;overflow-y:auto;padding:4px;display:flex;flex-direction:column;gap:2px;min-height:0}
 .eulog::-webkit-scrollbar{width:3px}.eulog::-webkit-scrollbar-track{background:var(--surface)}.eulog::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
-.eucard{background:var(--surface2);border:1px solid var(--border);border-radius:3px;padding:6px 8px;cursor:default;transition:border-color .2s}
-@keyframes euap{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
-.eucard{animation:euap .25s ease}
-.eucard:hover{border-color:var(--border2)}
-.eucard.failed{border-color:rgba(255,51,85,.4);background:rgba(255,51,85,.04)}
-.eurow{display:flex;align-items:center;justify-content:space-between;margin-bottom:3px}
-.euid{font-family:var(--font-m);font-size:10px;color:var(--cyan);font-weight:bold}
-.euid.failed{color:var(--red)}
-.eubadge{font-size:8px;padding:1px 5px;border-radius:2px;font-family:var(--font-m)}
-.eubadge.completed{background:rgba(0,232,122,.12);color:var(--green)}
-.eubadge.failed{background:rgba(255,51,85,.12);color:var(--red)}
-.eureason{font-family:var(--font-m);font-size:9px;color:var(--muted);line-height:1.55}
-.eureason span{color:var(--text)}
-.eureason em{color:var(--red);font-style:normal}
+.eucard{background:var(--surface2);border:1px solid var(--border);border-radius:3px;padding:6px 8px;transition:border-color .2s}
+@keyframes euap{from{opacity:0;transform:translateY(-5px)}to{opacity:1;transform:translateY(0)}}
+.eucard{animation:euap .22s ease}
+.eucard.failed{border-color:rgba(255,51,85,.35);background:rgba(255,51,85,.03)}
+.eucard.ai-card{border-color:rgba(0,229,204,.2);background:rgba(0,229,204,.03)}
+.eurow{display:flex;align-items:center;justify-content:space-between;margin-bottom:3px;gap:4px}
+.euid{font-family:var(--font-m);font-size:10px;color:var(--cyan);border-left:2px solid var(--cyan);padding-left:5px}
+.euid.failed{color:var(--red);border-color:var(--red)}
+.euid.ai{color:var(--purple);border-color:var(--purple)}
+.eubadge{font-size:7.5px;padding:1px 5px;border-radius:2px;font-family:var(--font-m);flex-shrink:0}
+.eubadge.completed{background:rgba(0,232,122,.1);color:var(--green)}
+.eubadge.failed{background:rgba(255,51,85,.1);color:var(--red)}
+.eubadge.thinking{background:rgba(160,96,255,.1);color:var(--purple)}
+.eureason{font-family:var(--font-m);font-size:8.5px;color:var(--muted);line-height:1.6;word-break:break-word}
+.eureason .hi{color:var(--text-bright)}.eureason .warn{color:var(--amber)}.eureason .ok{color:var(--green)}.eureason .ai{color:var(--purple)}
+
+/* ── AI STREAMING ── */
+.ai-stream{font-family:var(--font-m);font-size:8.5px;color:var(--purple);line-height:1.6;border-top:1px solid rgba(160,96,255,.15);margin-top:4px;padding-top:4px;white-space:pre-wrap}
+.ai-stream .cursor{display:inline-block;width:6px;height:9px;background:var(--purple);animation:blink .7s step-end infinite;vertical-align:middle;margin-left:1px}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
 
 /* ── INTENT QUEUE ── */
-.iqueue{padding:8px;display:flex;flex-direction:column;gap:3px;border-top:1px solid var(--border);flex-shrink:0;min-height:70px}
-.iitem{font-family:var(--font-m);font-size:10px;color:var(--muted);padding:2px 0}
+.iqueue{padding:7px 8px;display:flex;flex-direction:column;gap:3px;border-top:1px solid var(--border);flex-shrink:0;min-height:65px}
+.iitem{font-family:var(--font-m);font-size:9.5px;color:var(--muted)}
 .iitem span{color:var(--text)}
 
+/* ── SEARCH PANEL ── */
+.search-panel{padding:8px;border-top:1px solid var(--border);flex-shrink:0}
+.srow{display:flex;gap:4px}
+.sinput{flex:1;background:var(--surface3);border:1px solid var(--border2);border-radius:3px;color:var(--text-bright);font-family:var(--font-m);font-size:10px;padding:5px 8px;outline:none;transition:border-color .2s}
+.sinput:focus{border-color:var(--cyan)}
+.sbtn{background:var(--cyan-glow);border:1px solid var(--cyan-dim);border-radius:3px;color:var(--cyan);font-family:var(--font-m);font-size:9px;padding:5px 10px;cursor:pointer;white-space:nowrap;transition:all .2s}
+.sbtn:hover{background:rgba(0,229,204,.2)}
+.sbtn:disabled{opacity:.3;cursor:not-allowed}
+.sresults{margin-top:5px;font-family:var(--font-m);font-size:9px;color:var(--muted);max-height:64px;overflow-y:auto;line-height:1.7}
+.sresults .sr{color:var(--text-bright)}.sresults .sm{color:var(--muted)}
+
 /* ── FOOTER ── */
-.ftr{display:flex;align-items:center;gap:10px;padding:0 14px;height:48px;background:var(--surface);border-top:1px solid var(--border);flex-shrink:0}
+.ftr{display:flex;align-items:center;gap:8px;padding:0 12px;height:46px;background:var(--surface);border-top:1px solid var(--border);flex-shrink:0;flex-shrink:0}
 .flabel{font-family:var(--font-d);font-size:7px;letter-spacing:2px;color:var(--muted);white-space:nowrap}
-.wbtn{display:flex;align-items:center;gap:5px;background:var(--surface2);border:1px solid var(--border2);border-radius:3px;color:var(--text);font-family:var(--font-m);font-size:9px;letter-spacing:1px;padding:5px 11px;cursor:pointer;transition:all .2s;text-transform:uppercase}
+.wbtn{display:flex;align-items:center;gap:4px;background:var(--surface2);border:1px solid var(--border2);border-radius:3px;color:var(--text);font-family:var(--font-m);font-size:8.5px;letter-spacing:.8px;padding:5px 9px;cursor:pointer;transition:all .2s;text-transform:uppercase}
 .wbtn:hover{border-color:var(--cyan);color:var(--cyan);background:var(--cyan-glow)}
-.wbtn.emg{border-color:rgba(255,51,85,.4);color:var(--red)}
-.wbtn.emg:hover{background:rgba(255,51,85,.08)}
+.wbtn.emg{border-color:rgba(255,51,85,.3);color:var(--red)}
+.wbtn.emg:hover{background:rgba(255,51,85,.07)}
 .wdot{width:5px;height:5px;border-radius:50%;flex-shrink:0}
-.autobtn{background:rgba(0,229,204,.08);border:1px solid var(--cyan-dim);border-radius:3px;color:var(--cyan);font-family:var(--font-m);font-size:9px;padding:5px 10px;cursor:pointer;letter-spacing:1px;transition:all .2s}
-.autobtn.on{background:rgba(0,229,204,.18);animation:aglow 1.5s ease-in-out infinite}
-@keyframes aglow{0%,100%{box-shadow:0 0 4px var(--cyan-dim)}50%{box-shadow:0 0 14px var(--cyan)}}
-.fstatus{margin-left:auto;font-family:var(--font-m);font-size:9px;color:var(--muted);max-width:320px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.autobtn{background:rgba(0,229,204,.06);border:1px solid var(--cyan-dim);border-radius:3px;color:var(--cyan);font-family:var(--font-m);font-size:8.5px;padding:5px 9px;cursor:pointer;transition:all .2s;letter-spacing:.8px}
+.autobtn.on{background:rgba(0,229,204,.15);animation:aglow 1.6s ease-in-out infinite}
+@keyframes aglow{0%,100%{box-shadow:0 0 4px rgba(0,229,204,.3)}50%{box-shadow:0 0 12px var(--cyan)}}
+.aibtn{background:rgba(160,96,255,.07);border:1px solid rgba(160,96,255,.3);border-radius:3px;color:var(--purple);font-family:var(--font-m);font-size:8.5px;padding:5px 9px;cursor:pointer;transition:all .2s;letter-spacing:.8px}
+.aibtn:hover{background:rgba(160,96,255,.15)}
+.aibtn:disabled{opacity:.3;cursor:not-allowed}
+.fstatus{margin-left:auto;font-family:var(--font-m);font-size:9px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:280px}
 
 /* ── TOOLTIP ── */
-.tip{position:fixed;background:var(--surface3);border:1px solid var(--border2);border-radius:4px;padding:8px 12px;font-family:var(--font-m);font-size:10px;color:var(--text);pointer-events:none;z-index:2000;opacity:0;transition:opacity .12s;max-width:220px;line-height:1.7}
+.tip{position:fixed;background:var(--surface3);border:1px solid var(--border2);border-radius:4px;padding:7px 11px;font-family:var(--font-m);font-size:9.5px;color:var(--text);pointer-events:none;z-index:2000;opacity:0;transition:opacity .1s;max-width:210px;line-height:1.75}
 .tip.show{opacity:1}
 
-/* ── TRAD WARNING BANNER ── */
-.twarn{display:none;align-items:center;justify-content:center;gap:6px;padding:3px;background:rgba(255,128,64,.08);border-bottom:1px solid rgba(255,128,64,.25);font-family:var(--font-m);font-size:9px;color:var(--amber);letter-spacing:1px;flex-shrink:0}
+/* ── TRAD WARNING ── */
+.twarn{display:none;align-items:center;justify-content:center;gap:5px;padding:2px;background:rgba(255,128,64,.06);border-bottom:1px solid rgba(255,128,64,.2);font-family:var(--font-m);font-size:8.5px;color:var(--amber);letter-spacing:1px;flex-shrink:0}
 .twarn.show{display:flex}
-
-/* ── COMPARE STRIPE ── */
-.cstripe{position:absolute;top:0;right:0;bottom:0;width:3px;opacity:.4}
-.cdx-stripe{background:var(--cyan)}
-.trad-stripe{background:var(--amber)}
 </style>
 </head>
 <body>
 
-<!-- ═══════════════════════ HEADER ═══════════════════════ -->
+<!-- ══ OLLAMA STATUS BAR ══ -->
+<div id="ollama-bar" class="err">
+  <div class="odot err" id="odot"></div>
+  <span id="o-status">Connecting to Ollama at localhost:11434…</span>
+  <span style="margin-left:auto;display:flex;align-items:center;gap:10px">
+    <span style="color:var(--muted);font-size:8px">EMBED</span>
+    <select id="sel-embed" style="background:var(--surface2);border:1px solid var(--border2);color:var(--text-bright);font-family:var(--font-m);font-size:9px;padding:2px 5px;border-radius:3px;outline:none" onchange="onModelChange()">
+      <option value="">— not connected —</option>
+    </select>
+    <span style="color:var(--muted);font-size:8px">GEN</span>
+    <select id="sel-gen" style="background:var(--surface2);border:1px solid var(--border2);color:var(--text-bright);font-family:var(--font-m);font-size:9px;padding:2px 5px;border-radius:3px;outline:none" onchange="onModelChange()">
+      <option value="">— not connected —</option>
+    </select>
+    <span style="color:var(--muted);font-size:8px">·</span>
+    <span class="olink" onclick="window.open('https://ollama.com','_blank')" style="font-size:8px">ollama.com</span>
+    <span style="color:var(--muted);font-size:8px">· start:
+      <span style="color:var(--text-bright)">OLLAMA_ORIGINS="*" ollama serve</span>
+    </span>
+  </span>
+</div>
+
+<!-- ══ HEADER ══ -->
 <header class="hdr">
   <div class="logo">
     <div class="logo-hex">
-      <svg viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <polygon points="6,1 11,3.5 11,8.5 6,11 1,8.5 1,3.5" fill="rgba(0,229,204,.15)" stroke="#00e5cc" stroke-width="1"/>
-        <polygon points="6,3.5 8.5,5 8.5,7 6,8.5 3.5,7 3.5,5" fill="#00e5cc" opacity=".5"/>
+      <svg viewBox="0 0 12 12" width="11" height="11" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <polygon points="6,1 11,3.5 11,8.5 6,11 1,8.5 1,3.5" fill="rgba(0,229,204,.12)" stroke="#00e5cc" stroke-width="1"/>
+        <polygon points="6,3.5 8.5,5 8.5,7 6,8.5 3.5,7 3.5,5" fill="#00e5cc" opacity=".45"/>
       </svg>
     </div>
-    <div>
-      <div class="brand-name">CDX v2 RUNTIME</div>
-      <div class="brand-ver">COHERENT DATA EXECUTION</div>
-    </div>
+    <div><div class="brand-name">CDX v2 RUNTIME</div><div class="brand-ver">OLLAMA EDITION</div></div>
   </div>
-
   <div class="sep"></div>
   <div class="hchip"><label>PULSE</label><value id="h-pulse">0000</value></div>
   <div class="sep"></div>
@@ -184,91 +220,76 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
   <div class="sep"></div>
   <div class="hchip"><label>AVG CPU</label><value id="h-cpu">—</value></div>
   <div class="sep"></div>
-  <div class="hchip"><label>TOTAL POWER</label><value id="h-power">—</value></div>
+  <div class="hchip"><label>POWER</label><value id="h-power">—</value></div>
   <div class="sep"></div>
   <div class="hchip"><label>THERMAL</label><value id="h-therm" class="ok">NOMINAL</value></div>
   <div class="sep"></div>
-  <div class="hchip"><label>FAILURES</label><value id="h-fails" class="ok">0</value></div>
-
-  <span id="alert-badge" class="abadge">⚠ <span id="alert-n">0</span> ALERTS</span>
-
-  <div class="pdot" id="pdot"></div>
+  <div class="hchip"><label>FAILS</label><value id="h-fails" class="ok">0</value></div>
+  <span id="alert-badge">⚠ <span id="alert-n">0</span> ALERTS</span>
+  <div class="pdot"></div>
   <span style="font-family:var(--font-m);font-size:8px;color:var(--muted);letter-spacing:1px">LIVE</span>
-
   <div class="sep"></div>
   <div class="mode-toggle">
-    <button class="mbtn on" id="btn-cdx" onclick="setMode('cdx')">CDX v2</button>
+    <button class="mbtn on"   id="btn-cdx"  onclick="setMode('cdx')">CDX v2</button>
     <button class="mbtn trad" id="btn-trad" onclick="setMode('traditional')">TRADITIONAL</button>
   </div>
 </header>
 
-<!-- ═══════════════════════ MAIN ═══════════════════════ -->
+<!-- ══ MAIN ══ -->
 <div class="main">
 
-  <!-- ── LEFT: FLOOR MAP + THERMAL DEBT ── -->
+  <!-- LEFT: FLOOR + DEBT -->
   <div class="panel">
     <div class="ph"><span class="pt">FLOOR MAP</span><span class="pm">24 RACKS · 6×4</span></div>
     <div class="twarn" id="twarn">⚠ TRADITIONAL MODE — THERMAL SCHEDULING DISABLED</div>
-    <div class="floor">
-      <div class="rgrid" id="rgrid"></div>
-    </div>
+    <div class="floor"><div class="rgrid" id="rgrid"></div></div>
     <div class="tdebt">
       <div class="tsub">▲ THERMAL DEBT LEDGER</div>
       <div class="debt-row" id="debt-row"></div>
       <div class="debtfoot">
-        <span>TOTAL: <span id="total-debt" style="color:var(--amber)">0</span> UNITS</span>
-        <span>COOL RATE: <span id="cool-rate" style="color:var(--cyan)">—</span></span>
+        <span>TOTAL: <span id="total-debt" style="color:var(--amber)">0</span></span>
+        <span>COOL: <span id="cool-rate" style="color:var(--cyan)">—</span></span>
       </div>
     </div>
   </div>
 
-  <!-- ── CENTER: METRICS + CHARTS + TIMELINE ── -->
+  <!-- CENTER: METRICS + CHARTS + PULSE -->
   <div class="panel">
     <div class="mrow">
-      <div class="mcard pw">
-        <div class="mlabel">POWER DRAW</div>
-        <div><span class="mval" id="m-pw">0</span><span class="munit">kW</span></div>
-        <div class="mdelta" id="m-pw-d">—</div>
-      </div>
-      <div class="mcard cp">
-        <div class="mlabel">AVG CPU UTIL</div>
-        <div><span class="mval" id="m-cp">0</span><span class="munit">%</span></div>
-        <div class="mdelta" id="m-cp-d">—</div>
-      </div>
-      <div class="mcard tm">
-        <div class="mlabel">AVG TEMP</div>
-        <div><span class="mval" id="m-tm">0</span><span class="munit">°C</span></div>
-        <div class="mdelta" id="m-tm-d">—</div>
-      </div>
-      <div class="mcard wt">
-        <div class="mlabel">WATER COOLING</div>
-        <div><span class="mval" id="m-wt">0</span><span class="munit">L/hr</span></div>
-        <div class="mdelta">PUE <span id="m-pue" style="color:var(--text-bright)">1.00</span></div>
-      </div>
+      <div class="mcard pw"><div class="mlabel">POWER DRAW</div><div><span class="mval" id="m-pw">0</span><span class="munit">kW</span></div><div class="mdelta" id="m-pw-d">—</div></div>
+      <div class="mcard cp"><div class="mlabel">AVG CPU</div><div><span class="mval" id="m-cp">0</span><span class="munit">%</span></div><div class="mdelta" id="m-cp-d">—</div></div>
+      <div class="mcard tm"><div class="mlabel">AVG TEMP</div><div><span class="mval" id="m-tm">0</span><span class="munit">°C</span></div><div class="mdelta" id="m-tm-d">—</div></div>
+      <div class="mcard wt"><div class="mlabel">WATER L/hr</div><div><span class="mval" id="m-wt">0</span></div><div class="mdelta">PUE <span id="m-pue" style="color:var(--text-bright)">1.00</span></div></div>
     </div>
-
     <div class="charts">
-      <div class="chpanel">
-        <div class="chlabel">POWER CONSUMPTION (kW) — ROLLING 60s</div>
-        <canvas class="chcanvas" id="pw-chart"></canvas>
-      </div>
-      <div class="chpanel">
-        <div class="chlabel">CPU UTILIZATION (%) — ROLLING 60s</div>
-        <canvas class="chcanvas" id="cp-chart"></canvas>
-      </div>
+      <div class="chpanel"><div class="chlabel">POWER CONSUMPTION (kW) — 60s</div><canvas class="chcanvas" id="pw-chart"></canvas></div>
+      <div class="chpanel"><div class="chlabel">CPU UTILIZATION (%) — 60s</div><canvas class="chcanvas" id="cp-chart"></canvas></div>
     </div>
-
     <div class="ptimeline">
       <div class="ptitle">PULSE EXECUTION TIMELINE</div>
       <div class="plist" id="plist"></div>
     </div>
   </div>
 
-  <!-- ── RIGHT: EU LOG + INTENT QUEUE ── -->
+  <!-- RIGHT: EU LOG + SEARCH + INTENT QUEUE -->
   <div class="panel">
     <div class="ph"><span class="pt">EU AUDIT LOG</span><span class="pm" id="eu-count">0 EUs</span></div>
     <div class="eulog" id="eulog"></div>
-    <div class="ph" style="border-top:1px solid var(--border);margin-top:auto;border-bottom:none">
+
+    <!-- Ollama Semantic Search -->
+    <div class="ph" style="border-top:1px solid var(--border);border-bottom:none">
+      <span class="pt" style="color:var(--purple)">SEMANTIC SEARCH</span>
+      <span class="pm" id="search-status">waiting for Ollama</span>
+    </div>
+    <div class="search-panel">
+      <div class="srow">
+        <input class="sinput" id="sinput" placeholder="ZIP · county · state · free text…" onkeydown="if(event.key==='Enter')runSearch()">
+        <button class="sbtn" id="sbtn" onclick="runSearch()" disabled>SEARCH</button>
+      </div>
+      <div class="sresults" id="sresults">Waiting for Ollama…</div>
+    </div>
+
+    <div class="ph" style="border-top:1px solid var(--border);border-bottom:none">
       <span class="pt amber">INTENT QUEUE</span><span class="pm" id="iq-status">IDLE</span>
     </div>
     <div class="iqueue" id="iqueue">
@@ -278,203 +299,415 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
 
 </div>
 
-<!-- ═══════════════════════ FOOTER ═══════════════════════ -->
+<!-- ══ FOOTER ══ -->
 <footer class="ftr">
-  <span class="flabel">INJECT WORKLOAD ▶</span>
+  <span class="flabel">INJECT ▶</span>
   <button class="wbtn" onclick="inject('inference')"><span class="wdot" style="background:var(--cyan)"></span>INFERENCE</button>
   <button class="wbtn" onclick="inject('pipeline')"><span class="wdot" style="background:var(--blue)"></span>PIPELINE</button>
-  <button class="wbtn" onclick="inject('security')"><span class="wdot" style="background:var(--gold)"></span>SECURITY SCAN</button>
+  <button class="wbtn" onclick="inject('security')"><span class="wdot" style="background:var(--gold)"></span>SECURITY</button>
   <button class="wbtn" onclick="inject('ml_train')"><span class="wdot" style="background:var(--purple)"></span>ML TRAIN</button>
   <button class="wbtn emg" onclick="inject('emergency')"><span class="wdot" style="background:var(--red)"></span>EMERGENCY</button>
   <div class="sep"></div>
   <button class="autobtn" id="autobtn" onclick="toggleAuto()">⏵ AUTO</button>
-  <span class="fstatus" id="fstatus">CDX v2 RUNTIME ONLINE — INJECT A WORKLOAD OR ENABLE AUTO</span>
+  <button class="aibtn"   id="aibtn"   onclick="askOllama()" disabled>⬡ ASK AI</button>
+  <span class="fstatus" id="fstatus">CDX v2 RUNTIME · Connecting to Ollama…</span>
 </footer>
 
 <div class="tip" id="tip"></div>
 
-<!-- ═══════════════════════ ENGINE ═══════════════════════ -->
+<!-- ══════════════════════════════════════════════════════════════
+     ENGINE
+══════════════════════════════════════════════════════════════ -->
 <script>
-// ════════════════════════════════════════════════
-//  CONSTANTS & STATE
-// ════════════════════════════════════════════════
-const N = 24, COLS = 6, ROWS = 4, HLEN = 60;
-let mode = 'cdx';
-let autoRun = false, autoTimer = null, tickTimer = null, iqTimer = null;
+// ─── Config ───────────────────────────────────────────────────────────────────
+const OLLAMA_BASE = 'http://localhost:11434';
+const N = 24, HLEN = 60;
+
+// Auto-selected from whatever Ollama has installed; user can override via dropdowns
+let EMBED_MODEL = '';
+let GEN_MODEL   = '';
+
+// Priority-ordered name fragments for auto-selection
+const EMBED_HINTS = ['nomic-embed','mxbai-embed','all-minilm','bge-','snowflake','embed'];
+const GEN_HINTS   = ['llama3','llama2','llama','mistral','qwen','gemma','phi','deepseek','falcon','vicuna','command','orca','solar'];
+
+// ─── State ────────────────────────────────────────────────────────────────────
+let mode = 'cdx', ollamaOk = false, genOk = false;
+let autoRun = false, autoTimer = null, iqTimer = null;
 let pulseN = 0, euN = 0, failN = 0, alertN = 0;
 let euLog = [], pulseLog = [];
 let pwHist = new Array(HLEN).fill(0);
 let cpHist = new Array(HLEN).fill(0);
-let lastPw = 0, lastCp = 0, lastTm = 0;
-let racks = [];
+let lastPw = 0, racks = [];
+// Embedding cache (real vectors from Ollama)
+const EMBED_CACHE = new Map();
 
-// ════════════════════════════════════════════════
-//  RACK INIT
-// ════════════════════════════════════════════════
+// ─── Ollama helpers ───────────────────────────────────────────────────────────
+async function ollamaEmbed(text) {
+  const key = text.toLowerCase().trim();
+  if (EMBED_CACHE.has(key)) return EMBED_CACHE.get(key);
+  const r = await fetch(`${OLLAMA_BASE}/api/embeddings`, {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body:    JSON.stringify({ model: EMBED_MODEL, prompt: key }),
+    signal:  AbortSignal.timeout(8000),
+  });
+  if (!r.ok) throw new Error(`embed ${r.status}`);
+  const { embedding } = await r.json();
+  EMBED_CACHE.set(key, embedding);
+  return embedding;
+}
+
+function cosineSim(a, b) {
+  let d = 0;
+  for (let i = 0; i < a.length; i++) d += a[i] * b[i];
+  return d;
+}
+
+// Stream a generation from Ollama; calls onToken(str) for each token, returns full text
+async function ollamaGenerate(prompt, onToken, opts = {}) {
+  const r = await fetch(`${OLLAMA_BASE}/api/generate`, {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body:    JSON.stringify({
+      model:  GEN_MODEL,
+      prompt,
+      stream: true,
+      options: { temperature: 0.3, num_predict: opts.maxTokens || 120 },
+    }),
+    signal: AbortSignal.timeout(30000),
+  });
+  if (!r.ok) throw new Error(`generate ${r.status}`);
+  const reader  = r.body.getReader();
+  const decoder = new TextDecoder();
+  let full = '';
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    for (const line of decoder.decode(value).split('\n')) {
+      if (!line.trim()) continue;
+      try {
+        const obj = JSON.parse(line);
+        if (obj.response) { full += obj.response; onToken(obj.response); }
+        if (obj.done) return full;
+      } catch {}
+    }
+  }
+  return full;
+}
+
+// ─── Ollama status check ──────────────────────────────────────────────────────
+// Pick the best model from a list using priority hint fragments
+function pickModel(models, hints) {
+  for (const hint of hints) {
+    const m = models.find(n => n.toLowerCase().includes(hint));
+    if (m) return m;
+  }
+  return null;
+}
+
+function populateSelect(selId, models, chosen) {
+  const sel = document.getElementById(selId);
+  sel.innerHTML = models.map(m =>
+    `<option value="${m}" ${m === chosen ? 'selected' : ''}>${m}</option>`
+  ).join('');
+}
+
+// Called when user manually changes a dropdown
+function onModelChange() {
+  const newEmbed = document.getElementById('sel-embed').value;
+  const newGen   = document.getElementById('sel-gen').value;
+  if (newEmbed) { EMBED_MODEL = newEmbed; EMBED_CACHE.clear(); }
+  if (newGen)   { GEN_MODEL   = newGen; }
+  document.getElementById('search-status').textContent = EMBED_MODEL || 'not ready';
+  setStatus(`Models updated · embed: ${EMBED_MODEL || '—'} · gen: ${GEN_MODEL || '—'}`);
+}
+
+async function checkOllama() {
+  const bar  = document.getElementById('ollama-bar');
+  const dot  = document.getElementById('odot');
+  const stat = document.getElementById('o-status');
+  try {
+    const r = await fetch(`${OLLAMA_BASE}/api/tags`, { signal: AbortSignal.timeout(3000) });
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    const data   = await r.json();
+    const models = (data.models || []).map(m => m.name);
+
+    // Auto-pick on first connect (or if current model no longer present)
+    if (!EMBED_MODEL || !models.includes(EMBED_MODEL)) {
+      EMBED_MODEL = pickModel(models, EMBED_HINTS) || models[0] || '';
+      EMBED_CACHE.clear();
+    }
+    if (!GEN_MODEL || !models.includes(GEN_MODEL)) {
+      // For gen, prefer non-embed models; fall back to anything
+      const genCandidates = models.filter(m => !EMBED_HINTS.some(h => m.toLowerCase().includes(h)));
+      GEN_MODEL = pickModel(genCandidates.length ? genCandidates : models, GEN_HINTS)
+               || genCandidates[0] || models[0] || '';
+    }
+
+    ollamaOk = !!EMBED_MODEL;
+    genOk    = !!GEN_MODEL;
+
+    // Populate dropdowns (all models available for both, user can override)
+    populateSelect('sel-embed', models, EMBED_MODEL);
+    populateSelect('sel-gen',   models, GEN_MODEL);
+
+    dot.className = ollamaOk ? 'odot ok' : 'odot err';
+    bar.className = ollamaOk ? '' : 'warn';
+    stat.textContent = ollamaOk
+      ? `Ollama ONLINE · ${models.length} model${models.length>1?'s':''} available`
+      : `Ollama ONLINE but no models found — run: ollama pull llama3.2`;
+
+    document.getElementById('sbtn').disabled  = !ollamaOk;
+    document.getElementById('aibtn').disabled = !genOk;
+    document.getElementById('search-status').textContent = EMBED_MODEL || 'not ready';
+    if (ollamaOk) setStatus(`CDX v2 ONLINE · embed: ${EMBED_MODEL} · gen: ${GEN_MODEL}`);
+  } catch (e) {
+    dot.className = 'odot err';
+    bar.className = 'err';
+    stat.textContent = `Ollama unreachable (${e.message}) — start with: OLLAMA_ORIGINS="*" ollama serve`;
+    ollamaOk = genOk = false;
+    document.getElementById('sbtn').disabled  = true;
+    document.getElementById('aibtn').disabled = true;
+    setStatus('Ollama offline — deterministic-only mode');
+  }
+}
+
+// ─── Semantic search (real embeddings) ───────────────────────────────────────
+// Mini BM25 for ZIP corpus demo (same algorithm as search.js)
+const CORPUS = [
+  {zip:'10001',county:'New York',state:'NY'},{zip:'90210',county:'Los Angeles',state:'CA'},
+  {zip:'60601',county:'Cook',state:'IL'},{zip:'77001',county:'Harris',state:'TX'},
+  {zip:'85001',county:'Maricopa',state:'AZ'},{zip:'19101',county:'Philadelphia',state:'PA'},
+  {zip:'78201',county:'Bexar',state:'TX'},{zip:'92101',county:'San Diego',state:'CA'},
+  {zip:'75201',county:'Dallas',state:'TX'},{zip:'30301',county:'Fulton',state:'GA'},
+  {zip:'98101',county:'King',state:'WA'},{zip:'02101',county:'Suffolk',state:'MA'},
+  {zip:'80201',county:'Denver',state:'CO'},{zip:'97201',county:'Multnomah',state:'OR'},
+  {zip:'36003',county:'Autauga',state:'AL'},{zip:'55401',county:'Hennepin',state:'MN'},
+  {zip:'53201',county:'Milwaukee',state:'WI'},{zip:'48201',county:'Wayne',state:'MI'},
+  {zip:'44101',county:'Cuyahoga',state:'OH'},{zip:'64101',county:'Jackson',state:'MO'},
+];
+
+async function runSearch() {
+  if (!ollamaOk) return;
+  const q = document.getElementById('sinput').value.trim();
+  if (!q) return;
+  const btn = document.getElementById('sbtn');
+  const res = document.getElementById('sresults');
+  const stat = document.getElementById('search-status');
+
+  btn.disabled = true;
+  res.innerHTML = '<span style="color:var(--purple)">embedding query…</span>';
+  stat.textContent = 'embedding…';
+
+  try {
+    const t0   = performance.now();
+    const qVec = await ollamaEmbed(q);
+
+    // Embed all corpus docs (cached after first run)
+    const scored = await Promise.all(CORPUS.map(async doc => {
+      const txt  = `${doc.zip} ${doc.county} ${doc.state}`;
+      const dVec = await ollamaEmbed(txt);
+      return { doc, score: cosineSim(qVec, dVec) };
+    }));
+
+    scored.sort((a, b) => b.score - a.score);
+    const ms = (performance.now() - t0).toFixed(0);
+    stat.textContent = `${ms}ms · ${EMBED_MODEL || 'ollama'}`;
+
+    res.innerHTML = scored.slice(0, 5).map((s, i) =>
+      `<div><span class="sr">${i+1}. ${s.doc.zip}  ${s.doc.county}, ${s.doc.state}</span>  <span class="sm">sim=${s.score.toFixed(4)}</span></div>`
+    ).join('');
+  } catch (e) {
+    res.innerHTML = `<span style="color:var(--red)">Error: ${e.message}</span>`;
+    stat.textContent = 'error';
+  }
+  btn.disabled = false;
+}
+
+// ─── Ask AI (streaming generation) ───────────────────────────────────────────
+async function askOllama() {
+  if (!genOk) return;
+  // Gather current system state
+  const avgCp = (racks.reduce((s,r)=>s+r.cpu,0)/N).toFixed(1);
+  const avgTm = (racks.reduce((s,r)=>s+r.temp,0)/N).toFixed(1);
+  const totalPw = racks.reduce((s,r)=>s+r.power,0).toFixed(1);
+  const hotRacks = racks.filter(r=>r.temp>75).map(r=>`R${r.id}(${r.temp.toFixed(0)}°)`).join(', ') || 'none';
+  const topDebt  = [...racks].sort((a,b)=>b.thermalDebt-a.thermalDebt).slice(0,3).map(r=>`R${r.id}:${r.thermalDebt.toFixed(0)}`).join(', ');
+
+  const prompt = `You are the CDX v2 thermal-aware scheduler AI for a data center.
+
+Current state:
+- Mode: ${mode.toUpperCase()}
+- Avg CPU: ${avgCp}%
+- Avg Temp: ${avgTm}°C
+- Total Power: ${totalPw}kW
+- Hot racks (>75°C): ${hotRacks}
+- Highest thermal debt racks: ${topDebt}
+- Total failures this session: ${failN}
+- Pulses executed: ${pulseN}
+
+In 2-3 short sentences, give a concrete scheduling recommendation for the next workload injection. Be specific about rack numbers and thresholds. No markdown, no bullet points.`;
+
+  // Create streaming EU card
+  const id = ++euN;
+  const card = document.createElement('div');
+  card.className = 'eucard ai-card';
+  card.innerHTML = `
+    <div class="eurow">
+      <span class="euid ai">AI-${String(id).padStart(4,'0')}</span>
+      <span style="font-family:var(--font-m);font-size:9px;color:var(--muted)">SCHEDULER ANALYSIS</span>
+      <span class="eubadge thinking">THINKING</span>
+    </div>
+    <div class="eureason">model: <span class="hi">${GEN_MODEL}</span> · temp: <span class="hi">0.3</span> · pulse: <span class="hi">P-${String(pulseN).padStart(3,'0')}</span></div>
+    <div class="ai-stream" id="ai-stream-${id}"><span class="cursor"></span></div>
+  `;
+  const log = document.getElementById('eulog');
+  log.prepend(card);
+
+  const streamEl  = document.getElementById(`ai-stream-${id}`);
+  const badge     = card.querySelector('.eubadge');
+  const aibtn     = document.getElementById('aibtn');
+  const odot      = document.getElementById('odot');
+
+  aibtn.disabled  = true;
+  odot.className  = 'odot thinking';
+  setStatus(`Asking ${GEN_MODEL}…`);
+
+  let full = '';
+  try {
+    full = await ollamaGenerate(prompt, token => {
+      full += '';   // tracked inside generator
+      streamEl.innerHTML = escHtml(full + token) + '<span class="cursor"></span>';
+      streamEl.scrollIntoView({ block: 'nearest' });
+    }, { maxTokens: 130 });
+
+    streamEl.innerHTML = escHtml(full);
+    badge.textContent  = 'COMPLETE';
+    badge.className    = 'eubadge completed';
+    setStatus(`AI analysis complete · ${full.split(' ').length} tokens`);
+  } catch (e) {
+    streamEl.innerHTML = `<span style="color:var(--red)">Error: ${e.message}</span>`;
+    badge.textContent  = 'FAILED';
+    badge.className    = 'eubadge failed';
+  }
+
+  odot.className  = ollamaOk ? 'odot ok' : 'odot err';
+  aibtn.disabled  = false;
+  document.getElementById('eu-count').textContent = `${euN} EUs`;
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ─── Rack init ────────────────────────────────────────────────────────────────
 function initRacks() {
   racks = Array.from({length: N}, (_, i) => ({
-    id: i,
-    type: i < 16 ? 'compute' : i < 20 ? 'storage' : 'network',
-    cpu:  8  + Math.random() * 12,
-    ram:  22 + Math.random() * 20,
-    temp: 21 + Math.random() * 6,
-    power: 1.8 + Math.random() * 2,
-    thermalDebt: 0,
-    status: 'idle',
-    failures: 0
+    id: i, type: i < 16 ? 'compute' : i < 20 ? 'storage' : 'network',
+    cpu: 8 + Math.random()*12, ram: 22 + Math.random()*20,
+    temp: 21 + Math.random()*6, power: 1.8 + Math.random()*2,
+    thermalDebt: 0, status: 'idle', failures: 0,
   }));
 }
 
-// ════════════════════════════════════════════════
-//  WORKLOAD DEFINITIONS
-// ════════════════════════════════════════════════
+// ─── Workloads ────────────────────────────────────────────────────────────────
 const WL = {
-  inference: { name:'INFERENCE',   color:'#00e5cc', cpu:16,  heat:3.5, pwr:3.0, par:4, pri:'NORMAL',   maxTemp:72, maxCpu:80 },
-  pipeline:  { name:'PIPELINE',    color:'#4499ff', cpu:26,  heat:7.0, pwr:5.0, par:6, pri:'NORMAL',   maxTemp:70, maxCpu:85 },
-  security:  { name:'SECURITY',    color:'#f0c040', cpu:11,  heat:2.0, pwr:1.8, par:2, pri:'HIGH',     maxTemp:75, maxCpu:75 },
-  ml_train:  { name:'ML TRAIN',    color:'#a060ff', cpu:38,  heat:10,  pwr:7.5, par:5, pri:'NORMAL',   maxTemp:65, maxCpu:90 },
-  emergency: { name:'EMERGENCY',   color:'#ff3355', cpu:45,  heat:14,  pwr:9.0, par:8, pri:'CRITICAL', maxTemp:99, maxCpu:99 },
+  inference: {name:'INFERENCE', color:'#00e5cc', cpu:16, heat:3.5, pwr:3.0, par:4, pri:'NORMAL',   maxTemp:72, maxCpu:80},
+  pipeline:  {name:'PIPELINE',  color:'#4499ff', cpu:26, heat:7.0, pwr:5.0, par:6, pri:'NORMAL',   maxTemp:70, maxCpu:85},
+  security:  {name:'SECURITY',  color:'#f0c040', cpu:11, heat:2.0, pwr:1.8, par:2, pri:'HIGH',     maxTemp:75, maxCpu:75},
+  ml_train:  {name:'ML TRAIN',  color:'#a060ff', cpu:38, heat:10,  pwr:7.5, par:5, pri:'NORMAL',   maxTemp:65, maxCpu:90},
+  emergency: {name:'EMERGENCY', color:'#ff3355', cpu:45, heat:14,  pwr:9.0, par:8, pri:'CRITICAL', maxTemp:99, maxCpu:99},
 };
 
-// ════════════════════════════════════════════════
-//  CDX v2 THERMAL-AWARE SCHEDULER
-// ════════════════════════════════════════════════
+// ─── Schedulers ───────────────────────────────────────────────────────────────
 function scheduleCDX(wl) {
-  // Filter: thermal headroom + CPU budget + debt ceiling
   return racks
-    .filter(r => r.type === 'compute'
-              && r.cpu  < wl.maxCpu
-              && r.temp < wl.maxTemp
-              && r.thermalDebt < 50)
-    .sort((a, b) => {
-      // Composite score: weight thermal + debt equally
-      const scoreA = (a.temp * 0.6) + (a.thermalDebt * 0.4) + (a.cpu * 0.1);
-      const scoreB = (b.temp * 0.6) + (b.thermalDebt * 0.4) + (b.cpu * 0.1);
-      return scoreA - scoreB;   // lowest score = coolest + least debt
-    })
+    .filter(r => r.type==='compute' && r.cpu < wl.maxCpu && r.temp < wl.maxTemp && r.thermalDebt < 50)
+    .sort((a,b) => (a.temp*.6 + a.thermalDebt*.4 + a.cpu*.1) - (b.temp*.6 + b.thermalDebt*.4 + b.cpu*.1))
     .slice(0, wl.par);
 }
 
-// ════════════════════════════════════════════════
-//  TRADITIONAL GREEDY SCHEDULER (no thermal)
-// ════════════════════════════════════════════════
 function scheduleTraditional(wl) {
   return racks
-    .filter(r => r.type === 'compute' && r.cpu < 96)
-    .sort((a, b) => a.cpu - b.cpu)   // pure CPU greed, ignores heat
+    .filter(r => r.type==='compute' && r.cpu < 96)
+    .sort((a,b) => a.cpu - b.cpu)
     .slice(0, wl.par);
 }
 
-// ════════════════════════════════════════════════
-//  EXECUTION UNIT FACTORY
-// ════════════════════════════════════════════════
-function makeEU(rack, wl, cascade) {
-  const id = ++euN;
-  const headroom = (wl.maxTemp - rack.temp).toFixed(1);
-  const cpuFree  = (100 - rack.cpu).toFixed(1);
-  const status   = cascade ? 'failed' : 'completed';
-
-  const reason = mode === 'cdx' ? {
-    mode: 'CDX-v2',
-    rack: `R${String(rack.id).padStart(2,'0')}`,
-    thermalHeadroom: `${headroom}°C`,
-    cpuBudget: `${cpuFree}%`,
-    thermalDebt: rack.thermalDebt.toFixed(0),
-    pulse: pulseN,
-    decision: rack.thermalDebt > 20
-      ? 'Debt-aware reroute → cooler node selected'
-      : 'Thermal-first allocation → minimal heat cost'
-  } : {
-    mode: 'TRADITIONAL',
-    rack: `R${String(rack.id).padStart(2,'0')}`,
-    cpuFree: `${cpuFree}%`,
-    tempIgnored: `${rack.temp.toFixed(1)}°C (unmonitored)`,
-    pulse: pulseN,
-    decision: cascade
-      ? '🔴 CASCADE FAILURE — thermal overrun undetected'
-      : 'Greedy CPU allocation — no thermal check'
-  };
-
-  return { id, rackId: rack.id, workload: wl.name, color: wl.color, status, reason, cascade };
-}
-
-// ════════════════════════════════════════════════
-//  PULSE EXECUTION
-// ════════════════════════════════════════════════
+// ─── Pulse execution ──────────────────────────────────────────────────────────
 function executePulse(key) {
   pulseN++;
   const wl  = WL[key];
   const t0  = performance.now();
-  const sel = mode === 'cdx' ? scheduleCDX(wl) : scheduleTraditional(wl);
-  const eus = [];
+  const sel = mode==='cdx' ? scheduleCDX(wl) : scheduleTraditional(wl);
 
   sel.forEach(rack => {
-    // Cascade: traditional + already hot
-    const cascade = (mode === 'traditional' && rack.temp > 78);
+    const cascade = (mode==='traditional' && rack.temp > 78);
     if (cascade) { failN++; alertN++; rack.failures++; }
 
-    const eu = makeEU(rack, wl, cascade);
-    eus.push(eu);
+    const eu = {
+      id: ++euN,
+      rackId: rack.id, workload: wl.name, color: wl.color,
+      status: cascade ? 'failed' : 'completed',
+      cascade,
+      reason: mode==='cdx' ? {
+        rack: `R${String(rack.id).padStart(2,'0')}`,
+        thermalHeadroom: `${(wl.maxTemp-rack.temp).toFixed(1)}°C`,
+        cpuBudget: `${(100-rack.cpu).toFixed(1)}%`,
+        thermalDebt: rack.thermalDebt.toFixed(0),
+        decision: rack.thermalDebt>20 ? 'debt-aware reroute' : 'thermal-first allocation',
+      } : {
+        rack: `R${String(rack.id).padStart(2,'0')}`,
+        cpuFree: `${(100-rack.cpu).toFixed(1)}%`,
+        tempIgnored: `${rack.temp.toFixed(1)}°C (unmonitored)`,
+        decision: cascade ? 'CASCADE FAILURE — thermal overrun' : 'greedy CPU allocation',
+      },
+    };
     euLog.unshift(eu);
 
-    // Apply workload heat & CPU
-    const jitter = () => (Math.random() - 0.5) * 3;
-    rack.cpu   = Math.min(100, rack.cpu  + wl.cpu  + jitter());
-    rack.temp  = Math.min(95,  rack.temp + wl.heat + Math.random() * 2);
-    rack.power = Math.min(25,  rack.power + wl.pwr + jitter());
+    rack.cpu   = Math.min(100, rack.cpu   + wl.cpu  + (Math.random()-.5)*3);
+    rack.temp  = Math.min(95,  rack.temp  + wl.heat + Math.random()*2);
+    rack.power = Math.min(25,  rack.power + wl.pwr  + (Math.random()-.5)*2);
     rack.thermalDebt += wl.heat;
-    rack.status = rack.temp > 80 ? 'hot' : 'active';
+    rack.status = rack.temp>80 ? 'hot' : 'active';
 
-    // Visual flash
     const el = document.getElementById(`rack-${rack.id}`);
-    if (el) {
-      el.classList.remove('fired','failed');
-      void el.offsetWidth;
-      el.classList.add(cascade ? 'failed' : 'fired');
-    }
+    if (el) { el.classList.remove('fired','failed'); void el.offsetWidth; el.classList.add(cascade?'failed':'fired'); }
   });
 
-  const ms = (performance.now() - t0).toFixed(2);
+  const ms = (performance.now()-t0).toFixed(2);
+  pulseLog.unshift({id:pulseN, name:wl.name, color:wl.color, eus:sel.length, ms, mode});
+  if (pulseLog.length>7) pulseLog.pop();
+  if (euLog.length>120) euLog.length=120;
 
-  pulseLog.unshift({ id: pulseN, name: wl.name, color: wl.color, eus: eus.length, ms, mode });
-  if (pulseLog.length > 7) pulseLog.pop();
-  if (euLog.length > 100) euLog.length = 100;
-
-  showIntentQueue(key, wl, eus.length);
+  showIntentQueue(key, wl, sel.length);
   updateUI();
-  return { id: pulseN, name: wl.name, eus: eus.length, ms };
+  return {id:pulseN, name:wl.name, eus:sel.length, ms};
 }
 
-// ════════════════════════════════════════════════
-//  TICK — natural cooling & drift
-// ════════════════════════════════════════════════
+// ─── Tick ─────────────────────────────────────────────────────────────────────
 function tick() {
-  const coolRate = mode === 'cdx' ? 1.3 : 0.55;   // CDX cools faster (predictive)
+  const cool = mode==='cdx' ? 1.3 : 0.55;
   racks.forEach(r => {
     r.cpu   = Math.max(5,   r.cpu   - 2.2 + (Math.random()-.5)*1.5);
-    r.temp  = Math.max(19,  r.temp  - coolRate + (Math.random()-.5)*.4);
+    r.temp  = Math.max(19,  r.temp  - cool + (Math.random()-.5)*.4);
     r.power = Math.max(1.2, r.power - 0.5 + (Math.random()-.4)*.3);
     r.thermalDebt = Math.max(0, r.thermalDebt - 1.8);
-    if (r.cpu < 14) r.status = 'idle';
-    else if (r.temp > 76) r.status = 'hot';
-    else r.status = 'active';
+    r.status = r.cpu<14 ? 'idle' : r.temp>76 ? 'hot' : 'active';
   });
-
-  const totalPw = racks.reduce((s,r)=>s+r.power, 0);
-  const avgCp   = racks.reduce((s,r)=>s+r.cpu,   0) / N;
-  pwHist.push(totalPw); cpHist.push(avgCp);
-  if (pwHist.length > HLEN) pwHist.shift();
-  if (cpHist.length > HLEN) cpHist.shift();
-
+  const pw = racks.reduce((s,r)=>s+r.power,0);
+  const cp = racks.reduce((s,r)=>s+r.cpu,0)/N;
+  pwHist.push(pw); cpHist.push(cp);
+  if (pwHist.length>HLEN) pwHist.shift();
+  if (cpHist.length>HLEN) cpHist.shift();
   updateUI();
 }
 
-// ════════════════════════════════════════════════
-//  INJECT & MODE
-// ════════════════════════════════════════════════
+// ─── Mode / inject ────────────────────────────────────────────────────────────
 function inject(key) {
   const p = executePulse(key);
-  setStatus(`PULSE P-${String(p.id).padStart(3,'0')} · ${p.name} · ${p.eus} EUs dispatched · ${p.ms}ms`);
+  setStatus(`P-${String(p.id).padStart(3,'0')} · ${p.name} · ${p.eus} EUs · ${p.ms}ms`);
 }
 
 function setMode(m) {
@@ -482,311 +715,209 @@ function setMode(m) {
   document.getElementById('btn-cdx').classList.toggle('on', m==='cdx');
   document.getElementById('btn-trad').classList.toggle('on', m==='traditional');
   document.getElementById('twarn').classList.toggle('show', m==='traditional');
-  // Reset sim
-  failN = alertN = pulseN = euN = 0;
-  euLog = []; pulseLog = [];
-  pwHist.fill(0); cpHist.fill(0);
+  failN=alertN=pulseN=euN=0; euLog=[];pulseLog=[]; pwHist.fill(0);cpHist.fill(0);
   initRacks(); buildFloor(); buildDebt(); updateUI();
-  setStatus(`MODE: ${m.toUpperCase()} — ${m==='cdx'?'Thermal-first scheduling ACTIVE':'Greedy CPU scheduling — thermal unmonitored'}`);
+  setStatus(`MODE: ${m.toUpperCase()}`);
 }
 
 function toggleAuto() {
   autoRun = !autoRun;
   const btn = document.getElementById('autobtn');
   if (autoRun) {
-    btn.classList.add('on'); btn.textContent = '⏹ AUTO';
-    autoTimer = setInterval(() => {
-      const keys = ['inference','pipeline','security','ml_train'];
-      inject(keys[Math.floor(Math.random()*keys.length)]);
-    }, 2200);
+    btn.classList.add('on'); btn.textContent='⏹ AUTO';
+    const keys=['inference','pipeline','security','ml_train'];
+    autoTimer=setInterval(()=>inject(keys[Math.floor(Math.random()*keys.length)]),2400);
   } else {
-    btn.classList.remove('on'); btn.textContent = '⏵ AUTO';
+    btn.classList.remove('on'); btn.textContent='⏵ AUTO';
     clearInterval(autoTimer);
   }
 }
 
-// ════════════════════════════════════════════════
-//  INTENT QUEUE DISPLAY
-// ════════════════════════════════════════════════
-function showIntentQueue(key, wl, dispatched) {
+function showIntentQueue(key, wl, n) {
   const iq = document.getElementById('iqueue');
   document.getElementById('iq-status').textContent = '1 PROCESSING';
   iq.innerHTML = `
-    <div class="iitem">▶ <span>${wl.name}</span> · PULSE P-${String(pulseN).padStart(3,'0')}</div>
+    <div class="iitem">▶ <span>${wl.name}</span> · P-${String(pulseN).padStart(3,'0')}</div>
     <div class="iitem">PRIORITY: <span>${wl.pri}</span></div>
-    <div class="iitem">EUs DISPATCHED: <span>${dispatched}</span></div>
-    <div class="iitem">SCHEDULER: <span style="color:${mode==='cdx'?'var(--cyan)':'var(--amber)'}">${mode.toUpperCase()}</span></div>
+    <div class="iitem">EUs: <span>${n}</span> · SCHEDULER: <span style="color:${mode==='cdx'?'var(--cyan)':'var(--amber)'}">${mode.toUpperCase()}</span></div>
   `;
   clearTimeout(iqTimer);
-  iqTimer = setTimeout(() => {
-    iq.innerHTML = '<div class="iitem">NO PENDING INTENTS</div>';
-    document.getElementById('iq-status').textContent = 'IDLE';
-  }, 1800);
+  iqTimer=setTimeout(()=>{ iq.innerHTML='<div class="iitem">NO PENDING INTENTS</div>'; document.getElementById('iq-status').textContent='IDLE'; },1800);
 }
 
-function setStatus(msg) { document.getElementById('fstatus').textContent = msg; }
+function setStatus(msg) { document.getElementById('fstatus').textContent=msg; }
 
-// ════════════════════════════════════════════════
-//  RENDER — FLOOR MAP
-// ════════════════════════════════════════════════
+// ─── Render: floor ────────────────────────────────────────────────────────────
 function tempColor(t) {
-  t = Math.max(18, Math.min(95, t));
-  if (t < 32)  { const f=(t-18)/14;  return `rgba(${Math.round(f*20)},${Math.round(140+f*60)},${Math.round(200-f*30)},0.65)` }
-  if (t < 52)  { const f=(t-32)/20;  return `rgba(${Math.round(20+f*160)},${Math.round(200-f*60)},${Math.round(170-f*120)},0.72)` }
-  if (t < 70)  { const f=(t-52)/18;  return `rgba(${Math.round(180+f*75)},${Math.round(140-f*110)},50,0.78)` }
-  /* hot */     { const f=Math.min(1,(t-70)/25); return `rgba(255,${Math.round(40-f*30)},${Math.round(50-f*40)},0.85)` }
+  t=Math.max(18,Math.min(95,t));
+  if (t<32) { const f=(t-18)/14; return `rgba(${Math.round(f*20)},${Math.round(140+f*60)},${Math.round(200-f*30)},.65)`}
+  if (t<52) { const f=(t-32)/20; return `rgba(${Math.round(20+f*160)},${Math.round(200-f*60)},${Math.round(170-f*120)},.72)`}
+  if (t<70) { const f=(t-52)/18; return `rgba(${Math.round(180+f*75)},${Math.round(140-f*110)},50,.78)`}
+  const f=Math.min(1,(t-70)/25); return `rgba(255,${Math.round(40-f*30)},${Math.round(50-f*40)},.85)`;
 }
 
 function buildFloor() {
-  const grid = document.getElementById('rgrid');
-  grid.innerHTML = '';
-  racks.forEach(r => {
-    const el = document.createElement('div');
-    el.className = 'rack';
-    el.id = `rack-${r.id}`;
-    el.innerHTML = `
-      <span class="rack-id">R${String(r.id).padStart(2,'0')}</span>
-      <span class="rack-temp" id="rt-${r.id}">${r.temp.toFixed(0)}°</span>
-      <div class="rack-bar"><div class="rack-bar-fill" id="rb-${r.id}" style="width:${r.cpu}%"></div></div>
-    `;
-    el.addEventListener('mouseenter', e => showTip(e, r));
-    el.addEventListener('mouseleave', hideTip);
-    el.addEventListener('mousemove', moveTip);
-    grid.appendChild(el);
+  const g=document.getElementById('rgrid'); g.innerHTML='';
+  racks.forEach(r=>{
+    const el=document.createElement('div');
+    el.className='rack'; el.id=`rack-${r.id}`;
+    el.innerHTML=`<span class="rack-id">R${String(r.id).padStart(2,'0')}</span><span class="rack-temp" id="rt-${r.id}">${r.temp.toFixed(0)}°</span><div class="rack-bar"><div class="rack-bar-fill" id="rb-${r.id}"></div></div>`;
+    el.addEventListener('mouseenter',e=>showTip(e,r));
+    el.addEventListener('mouseleave',hideTip);
+    el.addEventListener('mousemove',moveTip);
+    g.appendChild(el);
   });
 }
 
 function updateFloor() {
-  racks.forEach(r => {
-    const el = document.getElementById(`rack-${r.id}`);
-    if (!el) return;
-    el.style.background = tempColor(r.temp);
-    el.style.borderColor = r.status==='hot'  ? 'rgba(255,128,64,.6)' :
-                           r.status==='active'? 'rgba(0,229,204,.25)' :
-                           'rgba(255,255,255,.04)';
-    const rt = document.getElementById(`rt-${r.id}`);
-    if (rt) { rt.textContent = `${r.temp.toFixed(0)}°`; rt.style.color = r.temp>75?'var(--amber)':r.temp>60?'var(--gold)':'var(--text)'; }
-    const rb = document.getElementById(`rb-${r.id}`);
-    if (rb) { rb.style.width=`${r.cpu}%`; rb.style.background=r.cpu>80?'var(--amber)':'var(--cyan)'; }
+  racks.forEach(r=>{
+    const el=document.getElementById(`rack-${r.id}`);
+    if(!el)return;
+    el.style.background=tempColor(r.temp);
+    el.style.borderColor=r.status==='hot'?'rgba(255,128,64,.55)':r.status==='active'?'rgba(0,229,204,.22)':'rgba(255,255,255,.04)';
+    const rt=document.getElementById(`rt-${r.id}`);
+    if(rt){rt.textContent=`${r.temp.toFixed(0)}°`;rt.style.color=r.temp>75?'var(--amber)':r.temp>60?'var(--gold)':'var(--text)';}
+    const rb=document.getElementById(`rb-${r.id}`);
+    if(rb){rb.style.width=`${r.cpu}%`;rb.style.background=r.cpu>80?'var(--amber)':'var(--cyan)';}
   });
 }
 
-// ════════════════════════════════════════════════
-//  RENDER — THERMAL DEBT
-// ════════════════════════════════════════════════
 function buildDebt() {
-  const row = document.getElementById('debt-row');
-  row.innerHTML = '';
-  racks.forEach((_, i) => {
-    const d = document.createElement('div');
-    d.className = 'dbar';
-    d.innerHTML = `
-      <div class="dbar-wrap"><div class="dbar-fill" id="db-${i}" style="height:0%"></div></div>
-      <div class="dlabel">${String(i).padStart(2,'0')}</div>
-    `;
+  const row=document.getElementById('debt-row'); row.innerHTML='';
+  racks.forEach((_,i)=>{
+    const d=document.createElement('div'); d.className='dbar';
+    d.innerHTML=`<div class="dbar-wrap"><div class="dbar-fill" id="db-${i}" style="height:0%"></div></div><div class="dlabel">${String(i).padStart(2,'0')}</div>`;
     row.appendChild(d);
   });
 }
 
 function updateDebt() {
-  racks.forEach((r, i) => {
-    const el = document.getElementById(`db-${i}`);
-    if (el) el.style.height = `${Math.min(100, r.thermalDebt/60*100)}%`;
-  });
-  const total = racks.reduce((s,r)=>s+r.thermalDebt,0);
-  document.getElementById('total-debt').textContent = total.toFixed(0);
-  document.getElementById('cool-rate').textContent = mode==='cdx' ? '1.3°/s' : '0.6°/s';
+  racks.forEach((r,i)=>{const el=document.getElementById(`db-${i}`);if(el)el.style.height=`${Math.min(100,r.thermalDebt/60*100)}%`;});
+  document.getElementById('total-debt').textContent=racks.reduce((s,r)=>s+r.thermalDebt,0).toFixed(0);
+  document.getElementById('cool-rate').textContent=mode==='cdx'?'1.3°/s':'0.6°/s';
 }
 
-// ════════════════════════════════════════════════
-//  RENDER — HEADER & METRICS
-// ════════════════════════════════════════════════
 function updateHeader() {
-  const avgCp  = racks.reduce((s,r)=>s+r.cpu, 0)/N;
-  const totalPw = racks.reduce((s,r)=>s+r.power, 0);
-  const hotN   = racks.filter(r=>r.temp>75).length;
-  document.getElementById('h-pulse').textContent = String(pulseN).padStart(4,'0');
-  document.getElementById('h-cpu').textContent   = avgCp.toFixed(0)+'%';
-  document.getElementById('h-power').textContent = totalPw.toFixed(0)+'kW';
-  const thEl = document.getElementById('h-therm');
-  if (hotN>4) { thEl.textContent='CRITICAL'; thEl.className='hot'; }
-  else if (hotN>1) { thEl.textContent='WARNING'; thEl.className='warn'; }
-  else { thEl.textContent='NOMINAL'; thEl.className='ok'; }
-  const fEl = document.getElementById('h-fails');
-  fEl.textContent = failN;
-  fEl.className = failN>0 ? 'hot' : 'ok';
-  const badge = document.getElementById('alert-badge');
-  badge.classList.toggle('show', alertN>0);
-  document.getElementById('alert-n').textContent = alertN;
+  const cp=racks.reduce((s,r)=>s+r.cpu,0)/N;
+  const pw=racks.reduce((s,r)=>s+r.power,0);
+  const hot=racks.filter(r=>r.temp>75).length;
+  document.getElementById('h-pulse').textContent=String(pulseN).padStart(4,'0');
+  document.getElementById('h-cpu').textContent=cp.toFixed(0)+'%';
+  document.getElementById('h-power').textContent=pw.toFixed(0)+'kW';
+  const th=document.getElementById('h-therm');
+  if(hot>4){th.textContent='CRITICAL';th.className='hot';}else if(hot>1){th.textContent='WARNING';th.className='warn';}else{th.textContent='NOMINAL';th.className='ok';}
+  const fe=document.getElementById('h-fails');fe.textContent=failN;fe.className=failN>0?'hot':'ok';
+  document.getElementById('alert-badge').classList.toggle('show',alertN>0);
+  document.getElementById('alert-n').textContent=alertN;
 }
 
 function updateMetrics() {
-  const avgCp  = racks.reduce((s,r)=>s+r.cpu, 0)/N;
-  const totalPw = racks.reduce((s,r)=>s+r.power, 0);
-  const avgTm  = racks.reduce((s,r)=>s+r.temp, 0)/N;
-  const thermalMult = mode==='traditional' ? 1.42 : 1.0;
-  const water = totalPw * 3.7 * thermalMult;
-  const pue   = Math.max(1, 1 + (water/(totalPw*10+1)));
-
-  document.getElementById('m-pw').textContent = totalPw.toFixed(1);
-  document.getElementById('m-cp').textContent = avgCp.toFixed(1);
-  document.getElementById('m-tm').textContent = avgTm.toFixed(1);
-  document.getElementById('m-wt').textContent = water.toFixed(0);
-  document.getElementById('m-pue').textContent = pue.toFixed(2);
-
-  // Deltas
-  const pwD = document.getElementById('m-pw-d');
-  const diff = totalPw - lastPw;
-  pwD.textContent = diff>0.5?`↑ ${diff.toFixed(1)}kW`:diff<-0.5?`↓ ${Math.abs(diff).toFixed(1)}kW`:'— stable';
-  pwD.className = 'mdelta '+(diff>0.5?'up':diff<-0.5?'dn':'');
-  lastPw = totalPw; lastCp = avgCp; lastTm = avgTm;
+  const cp=racks.reduce((s,r)=>s+r.cpu,0)/N;
+  const pw=racks.reduce((s,r)=>s+r.power,0);
+  const tm=racks.reduce((s,r)=>s+r.temp,0)/N;
+  const water=pw*3.7*(mode==='traditional'?1.42:1.0);
+  const pue=Math.max(1,1+(water/(pw*10+1)));
+  document.getElementById('m-pw').textContent=pw.toFixed(1);
+  document.getElementById('m-cp').textContent=cp.toFixed(1);
+  document.getElementById('m-tm').textContent=tm.toFixed(1);
+  document.getElementById('m-wt').textContent=water.toFixed(0);
+  document.getElementById('m-pue').textContent=pue.toFixed(2);
+  const diff=pw-lastPw;
+  const d=document.getElementById('m-pw-d');
+  d.textContent=diff>0.5?`↑ ${diff.toFixed(1)}kW`:diff<-0.5?`↓ ${Math.abs(diff).toFixed(1)}kW`:'— stable';
+  d.className='mdelta '+(diff>0.5?'up':diff<-0.5?'dn':'');
+  lastPw=pw;
 }
 
-// ════════════════════════════════════════════════
-//  RENDER — PULSE TIMELINE
-// ════════════════════════════════════════════════
 function updatePulseTimeline() {
-  const list = document.getElementById('plist');
-  list.innerHTML = '';
-  pulseLog.slice(0,6).forEach(p => {
-    const w = Math.min(100,(parseFloat(p.ms)/35)*100);
-    const div = document.createElement('div');
-    div.className = 'pentry';
-    div.innerHTML = `
-      <span style="color:var(--muted);width:38px">P-${String(p.id).padStart(3,'0')}</span>
-      <span style="color:var(--text);width:72px;font-size:9px">${p.name}</span>
-      <div class="pbar"><div class="pbarfill" style="width:${w}%;background:${p.color}"></div></div>
-      <span style="color:var(--muted);width:26px;text-align:right">${p.eus}EU</span>
-      <span style="color:${p.mode==='traditional'?'var(--amber)':'var(--cyan)'};width:38px;text-align:right">${p.ms}ms</span>
-    `;
-    list.appendChild(div);
+  const list=document.getElementById('plist'); list.innerHTML='';
+  pulseLog.slice(0,6).forEach(p=>{
+    const w=Math.min(100,(parseFloat(p.ms)/35)*100);
+    const d=document.createElement('div'); d.className='pentry';
+    d.innerHTML=`<span style="color:var(--muted);width:36px">P-${String(p.id).padStart(3,'0')}</span><span style="color:var(--text);width:68px;font-size:8.5px">${p.name}</span><div class="pbar"><div class="pbarfill" style="width:${w}%;background:${p.color}"></div></div><span style="color:var(--muted);width:24px;text-align:right">${p.eus}EU</span><span style="color:${p.mode==='traditional'?'var(--amber)':'var(--cyan)'};width:36px;text-align:right">${p.ms}ms</span>`;
+    list.appendChild(d);
   });
 }
 
-// ════════════════════════════════════════════════
-//  RENDER — EU AUDIT LOG
-// ════════════════════════════════════════════════
 function updateEULog() {
-  const log = document.getElementById('eulog');
-  log.innerHTML = '';
-  euLog.slice(0,40).forEach(eu => {
-    const r = eu.reason;
-    const div = document.createElement('div');
-    div.className = `eucard ${eu.status}`;
-    div.innerHTML = `
+  const log=document.getElementById('eulog');
+  // Remove old deterministic EU cards (not AI cards), prepend new ones
+  const existing=[...log.querySelectorAll('.eucard:not(.ai-card)')];
+  existing.slice(euLog.length).forEach(e=>e.remove());
+
+  const shown=log.querySelectorAll('.eucard:not(.ai-card)').length;
+  const toRender=euLog.slice(0, Math.min(40, euLog.length));
+
+  toRender.forEach((eu, idx) => {
+    if (idx < shown) return;  // already in DOM
+    const r=eu.reason;
+    const div=document.createElement('div');
+    div.className=`eucard ${eu.status}`;
+    div.innerHTML=`
       <div class="eurow">
-        <span class="euid ${eu.status}" style="border-left:2px solid ${eu.color};padding-left:5px">
-          EU-${String(eu.id).padStart(4,'0')}
-        </span>
-        <span style="font-family:var(--font-m);font-size:9px;color:var(--muted)">${eu.workload}</span>
+        <span class="euid ${eu.status}" style="border-left:2px solid ${eu.color};padding-left:5px">EU-${String(eu.id).padStart(4,'0')}</span>
+        <span style="font-family:var(--font-m);font-size:8.5px;color:var(--muted)">${eu.workload}</span>
         <span class="eubadge ${eu.status}">${eu.status.toUpperCase()}</span>
       </div>
       <div class="eureason">
-        rack:<span>${r.rack}</span> ·
-        ${r.thermalHeadroom?`thermal:<span>${r.thermalHeadroom}</span> · `:''}
-        cpu:<span>${r.cpuBudget||r.cpuFree}</span>
-        ${r.thermalDebt?` · debt:<span>${r.thermalDebt}</span>`:''}
-        <br>${eu.cascade?`<em>${r.decision}</em>`:`<span style="color:var(--muted)">${r.decision}</span>`}
-      </div>
-    `;
-    log.appendChild(div);
+        rack:<span class="hi">${r.rack}</span>
+        ${r.thermalHeadroom?` · thermal:<span class="ok">${r.thermalHeadroom}</span>`:''}
+        · cpu:<span class="hi">${r.cpuBudget||r.cpuFree}</span>
+        ${r.thermalDebt?` · debt:<span class="warn">${r.thermalDebt}</span>`:''}
+        <br><span class="${eu.cascade?'warn':'ok'}">${r.decision}</span>
+      </div>`;
+    // Insert before first non-AI card, or at top
+    const firstNonAI=log.querySelector('.eucard:not(.ai-card)');
+    if(firstNonAI) log.insertBefore(div,firstNonAI);
+    else log.prepend(div);
   });
-  document.getElementById('eu-count').textContent = `${euN} EUs`;
+
+  document.getElementById('eu-count').textContent=`${euN} EUs`;
 }
 
-// ════════════════════════════════════════════════
-//  RENDER — CHARTS
-// ════════════════════════════════════════════════
 function drawChart(id, data, color, mn, mx) {
-  const cv = document.getElementById(id);
-  if (!cv) return;
-  const W = cv.parentElement.offsetWidth - 24;
-  const H = cv.parentElement.offsetHeight - 36;
-  if (W<=0||H<=0) return;
-  cv.width=W; cv.height=H;
-  const ctx = cv.getContext('2d');
-  ctx.clearRect(0,0,W,H);
-
-  // Gridlines
-  ctx.strokeStyle='rgba(26,37,64,.7)'; ctx.lineWidth=1;
-  for (let i=0;i<=4;i++) { const y=H*i/4; ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
-
-  if (data.filter(v=>v>0).length < 2) return;
-
-  const pts = data.map((v,i)=>({
-    x:(i/(HLEN-1))*W,
-    y:H-((Math.max(mn,Math.min(mx,v))-mn)/(mx-mn))*H
-  }));
-
-  // Fill
-  ctx.beginPath();
-  ctx.moveTo(pts[0].x,H);
-  ctx.lineTo(pts[0].x,pts[0].y);
+  const cv=document.getElementById(id); if(!cv)return;
+  const W=cv.parentElement.offsetWidth-22, H=cv.parentElement.offsetHeight-34;
+  if(W<=0||H<=0)return; cv.width=W; cv.height=H;
+  const ctx=cv.getContext('2d'); ctx.clearRect(0,0,W,H);
+  ctx.strokeStyle='rgba(26,37,64,.65)'; ctx.lineWidth=1;
+  for(let i=0;i<=4;i++){const y=H*i/4;ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
+  if(data.filter(v=>v>0).length<2)return;
+  const pts=data.map((v,i)=>({x:(i/(HLEN-1))*W,y:H-((Math.max(mn,Math.min(mx,v))-mn)/(mx-mn))*H}));
+  ctx.beginPath();ctx.moveTo(pts[0].x,H);ctx.lineTo(pts[0].x,pts[0].y);
   pts.slice(1).forEach(p=>ctx.lineTo(p.x,p.y));
-  ctx.lineTo(pts[pts.length-1].x,H);
-  ctx.closePath();
-  const g=ctx.createLinearGradient(0,0,0,H);
-  g.addColorStop(0,color+'44'); g.addColorStop(1,color+'06');
-  ctx.fillStyle=g; ctx.fill();
-
-  // Line
-  ctx.beginPath();
-  ctx.moveTo(pts[0].x,pts[0].y);
+  ctx.lineTo(pts[pts.length-1].x,H);ctx.closePath();
+  const g=ctx.createLinearGradient(0,0,0,H);g.addColorStop(0,color+'40');g.addColorStop(1,color+'08');
+  ctx.fillStyle=g;ctx.fill();
+  ctx.beginPath();ctx.moveTo(pts[0].x,pts[0].y);
   pts.slice(1).forEach(p=>ctx.lineTo(p.x,p.y));
-  ctx.strokeStyle=color; ctx.lineWidth=1.5; ctx.stroke();
-
-  // Live value
-  const last=data[data.length-1];
-  ctx.font=`bold 11px 'Share Tech Mono'`;
-  ctx.fillStyle=color;
-  ctx.fillText(last.toFixed(1),5,14);
+  ctx.strokeStyle=color;ctx.lineWidth=1.5;ctx.stroke();
+  ctx.font=`bold 10px 'Share Tech Mono'`;ctx.fillStyle=color;ctx.fillText(data[data.length-1].toFixed(1),4,13);
 }
 
-// ════════════════════════════════════════════════
-//  TOOLTIP
-// ════════════════════════════════════════════════
-function showTip(e, r) {
-  const t = document.getElementById('tip');
-  t.innerHTML = `
-    <div style="color:var(--cyan);margin-bottom:4px;font-weight:bold">R${String(r.id).padStart(2,'0')} · ${r.type.toUpperCase()}</div>
-    CPU&nbsp;&nbsp;: <span style="color:var(--text-bright)">${r.cpu.toFixed(1)}%</span><br>
-    RAM&nbsp;&nbsp;: <span style="color:var(--text-bright)">${r.ram.toFixed(1)}%</span><br>
-    TEMP&nbsp;: <span style="color:${r.temp>75?'var(--amber)':'var(--green)'}">${r.temp.toFixed(1)}°C</span><br>
-    POWER: <span style="color:var(--text-bright)">${r.power.toFixed(2)}kW</span><br>
-    DEBT&nbsp;: <span style="color:var(--amber)">${r.thermalDebt.toFixed(0)}</span><br>
-    FAILS: <span style="color:${r.failures>0?'var(--red)':'var(--muted)'}">${r.failures}</span><br>
-    STATE: <span style="color:${r.status==='hot'?'var(--red)':r.status==='active'?'var(--cyan)':'var(--muted)'}">${r.status.toUpperCase()}</span>
-  `;
-  t.classList.add('show');
-  moveTip(e);
+// ─── Tooltip ──────────────────────────────────────────────────────────────────
+function showTip(e,r){
+  const t=document.getElementById('tip');
+  t.innerHTML=`<div style="color:var(--cyan);margin-bottom:3px">R${String(r.id).padStart(2,'0')} · ${r.type.toUpperCase()}</div>CPU&nbsp;: ${r.cpu.toFixed(1)}%<br>TEMP : <span style="color:${r.temp>75?'var(--amber)':'var(--green)'}">${r.temp.toFixed(1)}°C</span><br>PWR&nbsp;: ${r.power.toFixed(2)}kW<br>DEBT : <span style="color:var(--amber)">${r.thermalDebt.toFixed(0)}</span><br>FAILS: <span style="color:${r.failures>0?'var(--red)':'var(--muted)'}">${r.failures}</span>`;
+  t.classList.add('show');moveTip(e);
 }
-function hideTip() { document.getElementById('tip').classList.remove('show'); }
-function moveTip(e) { const t=document.getElementById('tip'); t.style.left=`${e.clientX+14}px`; t.style.top=`${e.clientY-20}px`; }
+function hideTip(){document.getElementById('tip').classList.remove('show');}
+function moveTip(e){const t=document.getElementById('tip');t.style.left=`${e.clientX+12}px`;t.style.top=`${e.clientY-18}px`;}
 
-// ════════════════════════════════════════════════
-//  MASTER UPDATE
-// ════════════════════════════════════════════════
+// ─── Master update ────────────────────────────────────────────────────────────
 function updateUI() {
-  updateFloor();
-  updateDebt();
-  updateHeader();
-  updateMetrics();
-  updatePulseTimeline();
-  updateEULog();
+  updateFloor(); updateDebt(); updateHeader(); updateMetrics();
+  updatePulseTimeline(); updateEULog();
   drawChart('pw-chart', pwHist, '#ff8040', 0, 180);
   drawChart('cp-chart', cpHist, '#00e5cc', 0, 100);
 }
 
-// ════════════════════════════════════════════════
-//  BOOT
-// ════════════════════════════════════════════════
-function boot() {
-  initRacks();
-  buildFloor();
-  buildDebt();
-  updateUI();
-  tickTimer = setInterval(tick, 1500);
-  setStatus('CDX v2 RUNTIME ONLINE — INJECT A WORKLOAD OR ENABLE AUTO');
+// ─── Boot ─────────────────────────────────────────────────────────────────────
+async function boot() {
+  initRacks(); buildFloor(); buildDebt(); updateUI();
+  setInterval(tick, 1500);
+  setInterval(checkOllama, 8000);   // re-poll Ollama every 8s
+  await checkOllama();
 }
 
 window.addEventListener('load', boot);
