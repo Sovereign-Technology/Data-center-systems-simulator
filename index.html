@@ -22,28 +22,28 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 #header{display:flex;align-items:center;gap:14px;padding:7px 14px;background:var(--bg2);border-bottom:1px solid var(--border2);height:46px;flex-shrink:0;}
 #logo{font-family:'Orbitron',sans-serif;font-size:15px;font-weight:900;color:var(--cyan);letter-spacing:3px;white-space:nowrap;}
 #logo span{color:#39ff9a;}
-#subtitle{font-size:8px;color:var(--muted);letter-spacing:2px;white-space:nowrap;}
+#subtitle{font-size:8px;color:#ffffff;letter-spacing:2px;white-space:nowrap;}
 #header-right{margin-left:auto;display:flex;gap:10px;align-items:center;}
-.sc-label{font-size:8px;color:#8aaccc;letter-spacing:1px;}
-.sc-btn{padding:2px 7px;font-size:8px;letter-spacing:1px;border-radius:2px;cursor:pointer;background:transparent;color:#8aaccc;border:1px solid var(--border);font-family:'Share Tech Mono',monospace;transition:all .2s;}
+.sc-label{font-size:8px;color:#ffffff;letter-spacing:1px;}
+.sc-btn{padding:2px 7px;font-size:8px;letter-spacing:1px;border-radius:2px;cursor:pointer;background:transparent;color:#ffffff;border:1px solid var(--border);font-family:'Share Tech Mono',monospace;transition:all .2s;}
 .sc-btn.active{background:#00e5ff1a;color:var(--cyan);border-color:#00e5ff44;}
 .sc-btn:hover{filter:brightness(1.3);}
 #sim-toggle{padding:3px 11px;font-size:8px;letter-spacing:2px;border-radius:2px;cursor:pointer;font-family:'Share Tech Mono',monospace;}
 #sim-toggle.live{background:#2ed57315;color:var(--green);border:1px solid #2ed57344;}
 #sim-toggle.paused{background:#ff475715;color:var(--red);border:1px solid #ff475744;}
 .hstat{text-align:center;}
-.hstat-label{font-size:7px;color:#8aaccc;letter-spacing:1px;}
+.hstat-label{font-size:7px;color:#ffffff;letter-spacing:1px;}
 .hstat-val{font-family:'Orbitron',sans-serif;font-size:12px;font-weight:700;color:var(--cyan);}
 #main{display:flex;height:calc(100vh - 46px);overflow:hidden;}
 #left{width:430px;flex-shrink:0;border-right:1px solid var(--border2);display:flex;flex-direction:column;background:var(--bg);}
 #left-header{padding:7px 11px;border-bottom:1px solid var(--border2);display:flex;align-items:center;gap:7px;flex-shrink:0;}
 .panel-title{font-family:'Orbitron',sans-serif;font-size:9px;color:var(--cyan);letter-spacing:2px;}
 #palette{padding:5px 9px;border-bottom:1px solid var(--border2);display:flex;gap:4px;flex-wrap:wrap;flex-shrink:0;}
-.pal-btn{padding:2px 6px;font-size:7px;letter-spacing:1px;border-radius:2px;cursor:pointer;background:var(--bg4);color:#a0bcd8;border:1px solid var(--border);font-family:'Share Tech Mono',monospace;transition:all .2s;}
+.pal-btn{padding:2px 6px;font-size:7px;letter-spacing:1px;border-radius:2px;cursor:pointer;background:var(--bg4);color:#ffffff;border:1px solid var(--border);font-family:'Share Tech Mono',monospace;transition:all .2s;}
 .pal-btn.active{color:#fff;filter:brightness(1.5);}
 #floor-wrap{flex:1;overflow:auto;padding:8px;}
 #grid{display:grid;grid-template-columns:repeat(12,1fr);gap:2px;width:100%;}
-.cell{aspect-ratio:1;background:var(--bg4);border:1px solid #0c1520;border-radius:2px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:background .15s;position:relative;overflow:hidden;font-size:7px;color:#4a7aaa;}
+.cell{aspect-ratio:1;background:var(--bg4);border:1px solid #0c1520;border-radius:2px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:background .15s;position:relative;overflow:hidden;font-size:7px;color:#ffffff;}
 .cell:hover{background:#0d1e2c;}
 .cell.placing:hover{background:#00e5ff12;border-color:#00e5ff44;}
 .cell.occupied{background:var(--bg3);cursor:grab;}
@@ -54,10 +54,10 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 .unit-bar{height:100%;border-radius:1px;transition:width .9s;}
 .unit-dot{font-size:6px;margin-top:1px;}
 #legend{display:flex;gap:6px;flex-wrap:wrap;padding:5px 9px 4px;border-top:1px solid var(--border2);}
-.leg-item{display:flex;align-items:center;gap:3px;font-size:7px;color:#8aaccc;}
+.leg-item{display:flex;align-items:center;gap:3px;font-size:7px;color:#ffffff;}
 #right{flex:1;display:flex;flex-direction:column;overflow:hidden;}
 #tabs{display:flex;border-bottom:1px solid var(--border2);background:var(--bg);flex-shrink:0;overflow-x:auto;}
-.tab-btn{padding:8px 14px;font-size:8px;letter-spacing:2px;cursor:pointer;background:transparent;color:#8aaccc;border:none;border-bottom:2px solid transparent;font-family:'Share Tech Mono',monospace;transition:all .15s;white-space:nowrap;}
+.tab-btn{padding:8px 14px;font-size:8px;letter-spacing:2px;cursor:pointer;background:transparent;color:#ffffff;border:none;border-bottom:2px solid transparent;font-family:'Share Tech Mono',monospace;transition:all .15s;white-space:nowrap;}
 .tab-btn:hover{background:#00e5ff07;}
 .tab-btn.active{background:var(--bg3);color:var(--cyan);border-bottom:2px solid var(--cyan);}
 #sel-label{margin-left:auto;padding:8px 12px;font-size:8px;color:#00e5ff55;letter-spacing:1px;white-space:nowrap;}
@@ -227,7 +227,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
   <div id="left">
     <div id="left-header">
       <span class="panel-title">FLOOR LAYOUT</span>
-      <span style="font-size:7px;color:var(--muted);">DRAG · CLICK</span>
+      <span style="font-size:7px;color:#ffffff;">DRAG · CLICK</span>
       <span id="placing-label" style="margin-left:auto;font-size:7px;background:#00e5ff1a;color:var(--cyan);padding:2px 6px;border-radius:2px;border:1px solid #00e5ff44;display:none;"></span>
     </div>
     <div id="palette"></div>
@@ -257,26 +257,26 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
     </div>
 
     <div id="tab-setups" class="tab-content">
-      <div style="font-size:8px;color:#8aaccc;letter-spacing:2px;">SELECT A PRE-BUILT CONFIGURATION — LOADS FLOOR LAYOUT AND BENCHMARKS</div>
+      <div style="font-size:8px;color:#ffffff;letter-spacing:2px;">SELECT A PRE-BUILT CONFIGURATION — LOADS FLOOR LAYOUT AND BENCHMARKS</div>
       <div class="setup-grid" id="setup-grid"></div>
       <div id="plex-detail" style="display:none;"></div>
       <div id="scmp-detail" style="display:none;"></div>
     </div>
 
     <div id="tab-compare" class="tab-content">
-      <div style="font-size:8px;color:#8aaccc;letter-spacing:2px;">SIDE-BY-SIDE BENCHMARK COMPARISON — ALL FIVE ARCHITECTURES</div>
+      <div style="font-size:8px;color:#ffffff;letter-spacing:2px;">SIDE-BY-SIDE BENCHMARK COMPARISON — ALL FIVE ARCHITECTURES</div>
       <div id="compare-table"></div>
       <div class="g2" id="compare-charts"></div>
     </div>
 
     <div id="tab-config" class="tab-content" style="flex-direction:row;gap:10px;">
       <div id="config-list"></div>
-      <div id="config-panel"><div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:10px;color:#8aaccc;letter-spacing:2px;">← SELECT A UNIT</div></div>
+      <div id="config-panel"><div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:10px;color:#ffffff;letter-spacing:2px;">← SELECT A UNIT</div></div>
     </div>
 
     <div id="tab-events" class="tab-content">
       <div style="display:flex;justify-content:space-between;align-items:center;">
-        <div style="font-size:8px;color:#8aaccc;letter-spacing:2px;" id="ev-count">EVENT LOG</div>
+        <div style="font-size:8px;color:#ffffff;letter-spacing:2px;" id="ev-count">EVENT LOG</div>
         <button id="btn-clear" style="font-size:7px;color:var(--red);background:transparent;border:1px solid #ff475744;padding:2px 8px;border-radius:2px;cursor:pointer;font-family:'Share Tech Mono',monospace;letter-spacing:1px;">CLEAR</button>
       </div>
       <div id="event-list" style="display:flex;flex-direction:column;"></div>
@@ -572,7 +572,7 @@ function renderConfigList(){
 
 function renderConfigPanel(){
   const panel=document.getElementById("config-panel");
-  if(!selectedId){panel.innerHTML=`<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:10px;color:#8aaccc;letter-spacing:2px;">← SELECT A UNIT</div>`;return;}
+  if(!selectedId){panel.innerHTML=`<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:10px;color:#ffffff;letter-spacing:2px;">← SELECT A UNIT</div>`;return;}
   const u=units.find(x=>x.id===selectedId);if(!u)return;const ut=UNIT_TYPES[u.type];
   panel.innerHTML=`<div class="cfg-card" style="border:1px solid ${ut.color}33;"><div class="cfg-header"><div><div class="cfg-title" style="color:${ut.color}">${ut.icon} ${u.name}</div><div class="cfg-sub">${ut.label} · [${u.col},${u.row}]</div></div><button id="btn-remove">✕ REMOVE</button></div><div class="field-grid"><div class="field"><div class="field-label">CPU CORES</div><input type="number" id="cfg-cores" min="1" max="256" step="4" value="${u.config.cores}"></div><div class="field"><div class="field-label">RAM (GB)</div><input type="number" id="cfg-ram" min="8" max="2048" step="8" value="${u.config.ramGb}"></div><div class="field"><div class="field-label">STORAGE (TB)</div><input type="number" id="cfg-stor" min="1" max="500" step="1" value="${u.config.storTb}"></div><div class="field"><div class="field-label">REDUNDANCY</div><select id="cfg-red">${["N","N+1","2N","2N+1"].map(o=>`<option${o===u.config.redundancy?" selected":""}>${o}</option>`).join("")}</select></div><div class="field" style="grid-column:1/-1"><div class="field-label" style="display:flex;justify-content:space-between;"><span>TIER LEVEL</span><span class="range-val">Tier ${u.config.tier}</span></div><input type="range" id="cfg-tier" min="1" max="4" step="1" value="${u.config.tier}"><div class="range-labels"><span>1</span><span>4</span></div></div></div><div class="impact-card"><div class="impact-title">⚡ ESTIMATED IMPACT</div><div class="impact-grid" id="impact-grid">${impactHTML(u)}</div></div></div>`;
   document.getElementById("btn-remove").onclick=()=>{const nm=u.name;units=units.filter(x=>x.id!==selectedId);delete metrics[selectedId];selectedId=null;activeSetup="custom";addEvent("warn","Removed: "+nm);renderGrid();renderTable();renderDetail();renderConfigList();renderConfigPanel();updateHeader();renderEvents();updateSelLabel();};
