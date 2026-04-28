@@ -1,317 +1,881 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
+<html lang="en"><head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>DataCore OS — Digital Twin Simulator</title>
-<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DataCore OS — CDX v2 + SCMP Decentralized</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&amp;family=Share+Tech+Mono&amp;family=Exo+2:wght@300;400;600;800&amp;display=swap" rel="stylesheet">
 <style>
+/* ─── RESET & BASE ─────────────────────────────────────────── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 :root{
-  --bg:#04070c;
-  --bg2:#070d16;
-  --bg3:#0b1420;
-  --bg4:#060b12;
-
-  --border:#2f4a6a;
-  --border2:#00e5ff30;
-
-  /* HIGH CONTRAST TEXT */
-  --text:#ffffff;
-  --text-strong:#f4faff;
-  --muted:#b9d6f2;
-  --muted2:#d0e6ff;
-
-  /* ACCENTS (brighter) */
-  --cyan:#00f0ff;
-  --green:#3cff8f;
-  --yellow:#ffcc33;
-  --red:#ff5c6a;
-
-  --orange:#ff7a3c;
-  --pink:#ff8ad6;
-  --lime:#baff7a;
-  --blue:#8cc8ff;
-  --gold:#ffe082;
-
-  --cdx:#7fff7f;
-  --cdx2:#39ff9a;
+  --bg:#080d14;
+  --surface:#0d1520;
+  --surface2:#111c2a;
+  --surface3:#162030;
+  --border:#1e3050;
+  --border2:#243a58;
+  --text:#e8f4ff;
+  --text2:#b0cde8;
+  --muted:#607890;
+  --muted2:#8aa8c0;
+  --accent-cyan:#00e5ff;
+  --accent-green:#2ed573;
+  --accent-amber:#ffa502;
+  --accent-red:#ff4757;
+  --accent-pink:#fd79a8;
+  --accent-lime:#a8ff78;
+  --accent-yellow:#f7d060;
+  --accent-blue:#74b9ff;
+  --accent-purple:#b48eff;
+  --accent-orange:#ff6b35;
+  --cdx:#39ff9a;
+  --scmp:#b48eff;
+  --font-mono:'Share Tech Mono',monospace;
+  --font-hud:'Orbitron',sans-serif;
+  --font-body:'Exo 2',sans-serif;
 }
-
-/* GLOBAL TYPE SCALE */
-html,body{
-  font-size:18px; /* ⬅️ master scale increase */
+html{font-size:16px;}
+body{
   background:var(--bg);
   color:var(--text);
-  font-family:'Share Tech Mono',monospace;
+  font-family:var(--font-body);
+  font-size:14px;
+  line-height:1.5;
+  min-height:100vh;
+  overflow-x:hidden;
 }
+button{cursor:pointer;font-family:var(--font-mono);border:none;outline:none;}
+input,select{font-family:var(--font-mono);outline:none;}
+canvas{display:block;}
 
-/* HEADERS */
-#logo{
-  font-size:28px;
-  letter-spacing:4px;
-  text-shadow:0 0 8px #00e5ff55;
+/* ─── SCROLLBARS ────────────────────────────────────────────── */
+::-webkit-scrollbar{width:5px;height:5px;}
+::-webkit-scrollbar-track{background:var(--surface);}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px;}
+
+/* ─── HEADER ────────────────────────────────────────────────── */
+#header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 24px;
+  background:var(--surface);
+  border-bottom:2px solid var(--border2);
+  position:sticky;top:0;z-index:100;
+  gap:16px;flex-wrap:wrap;
 }
-
-#subtitle{
-  font-size:20px;
-  color:var(--text-strong);
+.header-brand{
+  font-family:var(--font-hud);font-size:18px;font-weight:900;
+  color:var(--accent-cyan);letter-spacing:3px;white-space:nowrap;
 }
-
-/* BUTTONS + LABELS */
-.sc-label,
-.sc-btn,
-.tab-btn{
-  font-size:18px;
-  color:var(--text-strong);
+.header-brand span{color:var(--cdx);}
+.hud-pills{display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
+.hud-pill{
+  background:var(--surface2);border:1px solid var(--border2);border-radius:4px;
+  padding:8px 14px;text-align:center;
 }
-
-/* PANEL TITLES */
-.panel-title{
-  font-size:22px;
-  color:var(--cyan);
-  text-shadow:0 0 6px #00e5ff55;
+.hud-pill .lbl{
+  font-family:var(--font-mono);font-size:10px;color:var(--muted2);
+  letter-spacing:2px;display:block;margin-bottom:3px;
 }
-
-/* STATS */
-.hstat-label{
-  font-size:20px;
-  color:var(--text-strong);
+.hud-pill .val{
+  font-family:var(--font-hud);font-size:18px;font-weight:700;color:var(--text);
+  display:block;
 }
-
-.hstat-val{
-  font-size:24px;
-  color:var(--cyan);
+.header-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+#h-setup{font-family:var(--font-hud);font-size:13px;font-weight:700;letter-spacing:2px;}
+#sim-toggle{
+  font-family:var(--font-hud);font-size:12px;font-weight:700;letter-spacing:2px;
+  padding:9px 18px;border-radius:4px;border:2px solid var(--accent-green);
+  background:var(--accent-green)20;color:var(--accent-green);transition:.2s;
 }
+#sim-toggle.paused{border-color:var(--accent-amber);color:var(--accent-amber);background:var(--accent-amber)20;}
+#sim-toggle:hover{opacity:.8;}
+.sel-label-wrap{font-family:var(--font-mono);font-size:12px;color:var(--muted2);}
 
-/* GRID CELLS */
-.cell{
-  font-size:12px;
-  color:#fff;
+/* ─── SCENARIO BAR ──────────────────────────────────────────── */
+#scenario-bar{
+  display:flex;align-items:center;gap:12px;padding:12px 24px;
+  background:var(--surface2);border-bottom:1px solid var(--border);
+  flex-wrap:wrap;
 }
-
-.unit-icon{
-  font-size:20px;
+.sc-bar-label{
+  font-family:var(--font-hud);font-size:11px;color:var(--muted2);letter-spacing:2px;
+  margin-right:4px;white-space:nowrap;
 }
-
-/* CARDS */
-.card-title{
-  font-size:18px;
-  color:var(--muted2);
+#scenarios-wrap{display:flex;gap:8px;flex-wrap:wrap;}
+.sc-btn{
+  font-family:var(--font-hud);font-size:11px;font-weight:700;letter-spacing:2px;
+  padding:8px 16px;border-radius:3px;
+  background:var(--surface3);border:1px solid var(--border2);color:var(--muted2);
+  transition:.2s;
 }
+.sc-btn:hover{border-color:var(--accent-cyan);color:var(--accent-cyan);}
+.sc-btn.active{
+  background:var(--accent-cyan)18;border-color:var(--accent-cyan);
+  color:var(--accent-cyan);
+}
+#placing-label{
+  font-family:var(--font-mono);font-size:12px;color:var(--accent-yellow);
+  background:var(--accent-yellow)15;border:1px solid var(--accent-yellow)44;
+  padding:6px 14px;border-radius:3px;display:none;
+}
+.palette-label{
+  font-family:var(--font-hud);font-size:11px;color:var(--muted);letter-spacing:2px;
+  margin-left:16px;margin-right:6px;white-space:nowrap;
+}
+#palette{display:flex;gap:6px;flex-wrap:wrap;}
+.pal-btn{
+  font-family:var(--font-mono);font-size:11px;padding:7px 13px;border-radius:3px;
+  background:var(--surface3);border:1px solid var(--border2);color:var(--muted2);
+  transition:.2s;letter-spacing:.5px;
+}
+.pal-btn:hover{border-color:var(--accent-cyan);color:var(--accent-cyan);}
+.pal-btn.active{background:var(--accent-cyan)18;border-color:var(--accent-cyan);color:var(--accent-cyan);}
 
-/* STAT BLOCKS */
+/* ─── SPARKLINE ROW ─────────────────────────────────────────── */
+#sparkline-row{
+  display:grid;grid-template-columns:repeat(4,1fr);gap:1px;
+  border-bottom:2px solid var(--border);background:var(--border);
+}
+#sparkline-cards{display:contents;}
+.stat-card{
+  background:var(--surface2);padding:14px 18px 10px;
+  display:flex;flex-direction:column;gap:4px;
+}
 .stat-label{
-  font-size:12px;
-  color:var(--muted2);
+  font-family:var(--font-mono);font-size:10px;color:var(--muted2);
+  letter-spacing:2px;
 }
-
 .stat-val{
-  font-size:22px;
-  color:var(--cyan);
+  font-family:var(--font-hud);font-size:22px;font-weight:700;
+  display:flex;align-items:baseline;gap:4px;
+}
+.stat-sub{font-family:var(--font-mono);font-size:10px;color:var(--muted);}
+
+/* ─── MAIN LAYOUT ───────────────────────────────────────────── */
+#main{display:flex;height:calc(100vh - 210px);min-height:400px;}
+#left-panel{
+  width:260px;flex-shrink:0;
+  border-right:2px solid var(--border2);
+  display:flex;flex-direction:column;
+  background:var(--surface);
+}
+#center-panel{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+#right-panel{
+  width:300px;flex-shrink:0;
+  border-left:2px solid var(--border2);
+  background:var(--surface);
+  display:flex;flex-direction:column;
 }
 
-.stat-sub{
-  font-size:16px;
+/* ─── TABS ──────────────────────────────────────────────────── */
+.tab-bar{
+  display:flex;border-bottom:2px solid var(--border2);
+  background:var(--surface);flex-wrap:wrap;
 }
-
-/* TABLE */
-#unit-table{
-  font-size:14px;
+.tab-btn{
+  font-family:var(--font-hud);font-size:10px;font-weight:700;letter-spacing:2px;
+  padding:12px 16px;border:none;border-right:1px solid var(--border);
+  background:transparent;color:var(--muted2);transition:.15s;
 }
-
-#unit-table th{
-  font-size:13px;
-  color:var(--muted2);
-}
-
-#unit-table td{
-  font-size:14px;
-}
-
-/* DETAIL PANEL */
-.det-label{
-  font-size:14px;
-}
-
-.det-val{
-  font-size:22px;
-}
-
-/* CONFIG PANEL */
-.cfg-title{
-  font-size:26px;
-}
-
-.cfg-unit-name{
-  font-size:18px;
-}
-
-.cfg-unit-sub{
-  font-size:15px;
-}
-
-/* FORM FIELDS */
-.field-label{
-  font-size:13px;
-}
-
-.field input,
-.field select{
-  font-size:16px;
-}
-
-/* EVENTS */
-.event-row{
-  font-size:14px;
-}
-
-.ev-time,
-.ev-level{
-  font-size:12px;
-}
-
-/* RISK */
-.risk-row{
-  font-size:14px;
-}
-
-.risk-rec{
-  font-size:13px;
-}
-
-/* SETUPS */
-.setup-name{
-  font-size:18px;
-}
-
-.setup-sub{
-  font-size:15px;
-}
-
-/* COMPARE */
-.cmp-row-label{
-  font-size:13px;
-}
-
-.cmp-val{
-  font-size:16px;
-}
-
-.cmp-sub{
-  font-size:12px;
-}
-
-/* VISUAL BOOST */
-.card,
-.stat-card,
-.setup-card,
-.cfg-card{
-  box-shadow:0 0 10px rgba(0,229,255,0.08);
-}
-
-/* HOVER CONTRAST */
-.tab-btn:hover,
-.sc-btn:hover{
-  background:#00e5ff22;
-}
-
-/* STRONGER ACTIVE STATES */
+.tab-btn:hover{color:var(--text);background:var(--surface2);}
 .tab-btn.active{
-  color:#00f0ff;
-  border-bottom:2px solid #00f0ff;
-  text-shadow:0 0 6px #00e5ff66;
+  color:var(--accent-cyan);
+  background:var(--surface2);
+  border-bottom:3px solid var(--accent-cyan);
+}
+.tab-content{display:none;flex:1;overflow:auto;}
+.tab-content.active{display:flex;flex-direction:column;}
+
+/* ─── GRID TAB ──────────────────────────────────────────────── */
+#tab-grid.active{display:block;}
+#grid-area{padding:16px;overflow:auto;flex:1;}
+#grid{
+  display:grid;
+  grid-template-columns:repeat(12,1fr);
+  grid-template-rows:repeat(8,1fr);
+  gap:4px;
+  width:100%;
+  aspect-ratio:12/8;
+  min-width:480px;
+}
+.cell{
+  background:var(--surface2);border:1px solid var(--border);
+  border-radius:4px;position:relative;cursor:pointer;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  font-family:var(--font-mono);font-size:9px;color:var(--muted);
+  transition:border-color .15s,background .15s;
+  min-height:48px;
+  overflow:hidden;
+}
+.cell:hover{background:var(--surface3);border-color:var(--border2);}
+.cell.occupied{background:#0d1520;cursor:pointer;}
+.cell.placing{border:1px dashed var(--accent-cyan)55;cursor:crosshair;}
+.cell.placing:hover{background:var(--accent-cyan)10;border-color:var(--accent-cyan);}
+.cell.selected{border-width:2px;}
+.cell.draghover{background:var(--accent-blue)15;border-color:var(--accent-blue);}
+.cell.crit-glow{box-shadow:0 0 8px var(--accent-red)55;border-color:var(--accent-red)66;}
+.cell.cdx-glow{box-shadow:0 0 6px var(--cdx)33;}
+.cell.scmp-glow{box-shadow:0 0 6px var(--scmp)33;}
+.unit-icon{font-size:20px;line-height:1;}
+.unit-bar-wrap{
+  position:absolute;bottom:0;left:0;right:0;height:3px;background:var(--border);
+}
+.unit-bar{height:100%;border-radius:0 0 4px 4px;transition:width .4s;}
+.unit-dot{
+  position:absolute;top:3px;right:4px;font-size:8px;line-height:1;
+}
+#legend{
+  display:flex;flex-wrap:wrap;gap:8px 14px;padding:12px 16px;
+  border-top:1px solid var(--border);
+  background:var(--surface2);
+}
+.leg-item{font-family:var(--font-mono);font-size:11px;color:var(--muted2);display:flex;align-items:center;gap:5px;}
+
+/* ─── DETAIL PANEL ──────────────────────────────────────────── */
+#detail-panel{
+  display:none;padding:14px 16px;
+  border-top:2px solid var(--border2);
+  background:var(--surface2);
+}
+.det-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+.det-cell{background:var(--surface3);border-radius:4px;padding:10px 12px;border:1px solid var(--border);}
+.det-label{font-family:var(--font-mono);font-size:10px;color:var(--muted2);letter-spacing:1.5px;margin-bottom:4px;}
+.det-val{font-family:var(--font-hud);font-size:16px;font-weight:700;color:var(--text);margin-bottom:5px;}
+.det-bar-wrap{height:4px;background:var(--border);border-radius:2px;}
+.det-bar{height:100%;border-radius:2px;transition:width .4s;}
+
+/* ─── UNITS TABLE TAB ───────────────────────────────────────── */
+#tab-table.active{display:block;overflow:auto;}
+.table-wrap{overflow:auto;flex:1;}
+table{width:100%;border-collapse:collapse;}
+thead th{
+  font-family:var(--font-hud);font-size:10px;letter-spacing:2px;
+  color:var(--muted2);text-align:left;
+  padding:12px 14px;
+  background:var(--surface2);
+  border-bottom:2px solid var(--border2);
+  position:sticky;top:0;z-index:5;white-space:nowrap;
+}
+tbody td{
+  font-family:var(--font-mono);font-size:12px;color:var(--text2);
+  padding:11px 14px;border-bottom:1px solid var(--border);
+  white-space:nowrap;
+}
+tbody tr{cursor:pointer;transition:background .1s;}
+tbody tr:hover{background:var(--surface3);}
+tbody tr.row-sel{background:var(--surface3);}
+.tbar-wrap{display:flex;align-items:center;gap:7px;min-width:100px;}
+.tbar{flex:1;height:6px;background:var(--border);border-radius:3px;overflow:hidden;}
+.tbar-fill{height:100%;border-radius:3px;transition:width .4s;}
+
+/* ─── CONFIG TAB ────────────────────────────────────────────── */
+#tab-config.active{display:grid;grid-template-columns:220px 1fr;overflow:hidden;}
+#config-list{
+  border-right:1px solid var(--border2);overflow-y:auto;
+  padding:10px;display:flex;flex-direction:column;gap:6px;
+  background:var(--surface);
+}
+.cfg-unit{
+  padding:10px 12px;border-radius:4px;border:1px solid var(--border);
+  cursor:pointer;background:var(--surface2);transition:.15s;
+}
+.cfg-unit:hover{border-color:var(--border2);background:var(--surface3);}
+.cfg-unit.active{background:var(--surface3);}
+.cfg-unit-name{font-family:var(--font-mono);font-size:12px;color:var(--text);}
+.cfg-unit-sub{font-family:var(--font-mono);font-size:10px;color:var(--muted);}
+.cfg-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+#config-panel{overflow-y:auto;padding:18px;background:var(--surface);}
+.cfg-card{border-radius:6px;padding:18px;background:var(--surface2);}
+.cfg-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;}
+.cfg-title{font-family:var(--font-hud);font-size:15px;font-weight:700;margin-bottom:4px;}
+.cfg-sub{font-family:var(--font-mono);font-size:11px;color:var(--muted2);}
+#btn-remove{
+  font-family:var(--font-hud);font-size:10px;letter-spacing:1px;
+  padding:7px 14px;border-radius:3px;
+  background:var(--accent-red)18;border:1px solid var(--accent-red)55;
+  color:var(--accent-red);cursor:pointer;white-space:nowrap;
+}
+#btn-remove:hover{background:var(--accent-red)30;}
+.field-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;}
+.field{display:flex;flex-direction:column;gap:5px;}
+.field-label{font-family:var(--font-mono);font-size:11px;color:var(--muted2);letter-spacing:1px;}
+.field input,.field select{
+  background:var(--surface3);border:1px solid var(--border2);
+  color:var(--text);padding:8px 10px;border-radius:3px;
+  font-size:13px;
+}
+.field input:focus,.field select:focus{border-color:var(--accent-cyan);}
+.field input[type=range]{
+  appearance:none;height:5px;background:var(--border2);border-radius:3px;padding:0;border:none;
+  accent-color:var(--accent-cyan);
+}
+.range-val{font-family:var(--font-hud);font-size:11px;color:var(--accent-cyan);}
+.range-labels{display:flex;justify-content:space-between;font-family:var(--font-mono);font-size:10px;color:var(--muted);}
+.impact-card{background:var(--surface3);border:1px solid var(--border);border-radius:4px;padding:12px;}
+.impact-title{font-family:var(--font-hud);font-size:10px;color:var(--accent-yellow);letter-spacing:2px;margin-bottom:10px;}
+.impact-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+.impact-lbl{font-family:var(--font-mono);font-size:9px;color:var(--muted);letter-spacing:1px;margin-bottom:3px;}
+.impact-val{font-family:var(--font-hud);font-size:14px;font-weight:700;color:var(--text);}
+
+/* ─── CAPACITY TAB ──────────────────────────────────────────── */
+#tab-capacity.active{display:block;overflow:auto;}
+.cap-section{padding:16px 20px;border-bottom:1px solid var(--border);}
+.cap-section-title{
+  font-family:var(--font-hud);font-size:12px;font-weight:700;
+  color:var(--muted2);letter-spacing:3px;margin-bottom:12px;
+}
+#cap-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px;}
+.risk-row{
+  display:flex;align-items:flex-start;gap:12px;
+  padding:10px 14px;border-radius:4px;margin-bottom:6px;
+}
+.risk-msg{font-family:var(--font-mono);font-size:12px;color:var(--text);margin-bottom:2px;}
+.risk-rec{font-family:var(--font-mono);font-size:11px;color:var(--muted2);}
+.chart-label{
+  font-family:var(--font-hud);font-size:10px;color:var(--muted2);
+  letter-spacing:2px;margin-bottom:8px;
+}
+canvas.bar-chart{width:100%;height:100px;border-radius:3px;background:var(--surface3);}
+
+/* ─── SETUPS TAB ────────────────────────────────────────────── */
+#tab-setups.active{display:block;overflow:auto;}
+#setup-grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));
+  gap:14px;padding:18px;
+}
+.setup-card{
+  background:var(--surface2);border:1px solid var(--border2);border-radius:6px;
+  padding:18px;position:relative;transition:.2s;
+}
+.setup-card:hover{border-color:var(--border2);background:var(--surface3);}
+.setup-card.active-setup{border-width:2px;}
+.active-badge{
+  position:absolute;top:12px;right:14px;
+  font-family:var(--font-hud);font-size:9px;letter-spacing:2px;
+  color:var(--cdx);background:var(--cdx)15;
+  padding:4px 10px;border-radius:10px;border:1px solid var(--cdx)44;
+}
+.setup-name{font-family:var(--font-hud);font-size:15px;font-weight:700;margin-bottom:8px;}
+.setup-sub{font-family:var(--font-mono);font-size:11px;color:var(--muted2);line-height:1.6;margin-bottom:10px;}
+.setup-pills{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:12px;}
+.pill{
+  font-family:var(--font-mono);font-size:10px;padding:3px 10px;
+  border-radius:10px;border:1px solid;letter-spacing:.5px;
+}
+.setup-mini-stats{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;
+}
+.mini-stat-lbl{font-family:var(--font-mono);font-size:9px;color:var(--muted);letter-spacing:1px;margin-bottom:2px;}
+.mini-stat-val{font-family:var(--font-hud);font-size:16px;font-weight:700;}
+.load-btn{
+  width:100%;font-family:var(--font-hud);font-size:11px;font-weight:700;letter-spacing:2px;
+  padding:10px;border-radius:4px;border:1px solid;
+  background:transparent;transition:.15s;cursor:pointer;
+}
+.load-btn:hover{opacity:.75;}
+
+/* ─── PLEX / SCMP DETAIL ────────────────────────────────────── */
+#plex-detail,#scmp-detail{
+  margin:0 18px 18px;border-radius:6px;
+  border:1px solid #39ff9a33;background:#060f09;
+}
+#scmp-detail{border-color:#b48eff33;background:#080612;}
+.plex-section,.scmp-section{padding:18px;}
+.plex-title,.scmp-title{
+  display:flex;align-items:center;gap:10px;
+  font-family:var(--font-hud);font-size:13px;font-weight:700;
+  color:var(--cdx);letter-spacing:2px;margin-bottom:14px;
+}
+.scmp-title{color:var(--scmp);}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+.pipe-stage{
+  background:#0a1a10;border:1px solid #39ff9a33;border-radius:4px;
+  padding:10px;
+}
+.pipe-stage-title{font-family:var(--font-mono);font-size:10px;color:var(--cdx);letter-spacing:1px;margin-bottom:5px;}
+.pipe-stage-val{font-family:var(--font-hud);font-size:18px;font-weight:700;color:var(--text);margin-bottom:3px;}
+.pipe-stage-sub{font-family:var(--font-mono);font-size:9px;color:var(--muted);}
+.eu-flow{display:flex;align-items:center;gap:5px;flex-wrap:wrap;padding:8px 0;}
+.eu-box{
+  font-family:var(--font-mono);font-size:10px;padding:5px 10px;
+  border-radius:3px;border:1px solid;letter-spacing:.5px;
+}
+
+/* Pulse animation */
+.pulse-anim{display:flex;align-items:flex-end;gap:2px;height:18px;}
+.pulse-bar{
+  width:4px;border-radius:2px;background:var(--cdx);
+  animation:pulse-bounce .8s ease-in-out infinite alternate;
+}
+@keyframes pulse-bounce{0%{height:4px;opacity:.4;}100%{height:16px;opacity:1;}}
+
+/* SCMP shard track */
+.shard-track{height:3px;background:#1a1030;border-radius:2px;margin-top:4px;}
+.shard-fill{height:100%;background:var(--scmp);border-radius:2px;}
+
+/* ─── COMPARE TAB ───────────────────────────────────────────── */
+#tab-compare.active{display:block;overflow:auto;}
+#compare-content{padding:18px;}
+.cmp-header-row,.cmp-row{
+  display:grid;
+  grid-template-columns:220px repeat(5,1fr);
+  gap:5px;margin-bottom:5px;align-items:center;
+}
+.cmp-col-head{
+  font-family:var(--font-hud);font-size:9px;font-weight:700;letter-spacing:1px;
+  padding:8px 10px;border-radius:4px;text-align:center;line-height:1.4;
+}
+.cmp-section-label{
+  font-family:var(--font-hud);font-size:10px;color:var(--muted);letter-spacing:3px;
+  padding:12px 0 5px;border-top:1px solid var(--border);margin-top:8px;
+}
+.cmp-row-label{
+  font-family:var(--font-mono);font-size:12px;color:var(--text2);padding:4px 0;
+}
+.cmp-cell{text-align:center;}
+.cmp-val{
+  font-family:var(--font-hud);font-size:12px;font-weight:700;
+  padding:6px 10px;border-radius:3px;display:inline-block;
+  background:var(--surface2);border:1px solid var(--border);color:var(--text2);
+}
+.cmp-val.best{background:var(--accent-green)18;border-color:var(--accent-green)55;color:var(--accent-green);}
+.cmp-val.worst{background:var(--accent-red)15;border-color:var(--accent-red)44;color:var(--accent-red);}
+.cmp-val.yes{background:var(--accent-green)18;border-color:var(--accent-green)55;color:var(--accent-green);}
+.cmp-val.no{background:var(--accent-red)15;border-color:var(--accent-red)44;color:var(--accent-red);}
+.cmp-val.partial{background:var(--accent-amber)15;border-color:var(--accent-amber)44;color:var(--accent-amber);}
+.win-badge{
+  font-family:var(--font-hud);font-size:8px;color:var(--accent-green);
+  letter-spacing:1px;margin-top:2px;
+}
+#compare-charts{padding:18px;display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.cmp-chart-wrap{background:var(--surface2);border:1px solid var(--border2);border-radius:6px;padding:16px;}
+.card-title{font-family:var(--font-hud);font-size:10px;color:var(--muted2);letter-spacing:2px;margin-bottom:12px;}
+.bar-compare{display:flex;flex-direction:column;gap:7px;}
+.bar-compare-row{display:flex;align-items:center;gap:10px;}
+.bar-compare-label{font-family:var(--font-mono);font-size:10px;color:var(--text2);white-space:nowrap;width:130px;flex-shrink:0;}
+.bar-compare-track{flex:1;height:26px;background:var(--surface3);border-radius:3px;overflow:hidden;}
+.bar-compare-fill{height:100%;display:flex;align-items:center;padding-left:8px;border-radius:3px;min-width:30px;}
+.bar-compare-text{font-family:var(--font-mono);font-size:11px;font-weight:600;white-space:nowrap;}
+.lat-row{display:flex;align-items:center;gap:8px;margin-bottom:4px;}
+.lat-label{font-family:var(--font-hud);font-size:10px;width:28px;flex-shrink:0;color:var(--muted2);}
+.lat-track{flex:1;height:14px;background:var(--surface3);border-radius:2px;overflow:hidden;}
+.lat-fill{height:100%;border-radius:2px;}
+
+/* ─── EVENTS TAB ────────────────────────────────────────────── */
+#tab-events.active{display:flex;flex-direction:column;overflow:hidden;}
+.ev-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:12px 16px;border-bottom:1px solid var(--border);
+  background:var(--surface2);
+}
+#ev-count{font-family:var(--font-hud);font-size:11px;color:var(--muted2);letter-spacing:2px;}
+#btn-clear{
+  font-family:var(--font-hud);font-size:10px;letter-spacing:1px;
+  padding:6px 14px;border-radius:3px;
+  background:var(--accent-red)15;border:1px solid var(--accent-red)44;
+  color:var(--accent-red);cursor:pointer;
+}
+#btn-clear:hover{background:var(--accent-red)25;}
+#event-list{flex:1;overflow-y:auto;padding:8px 12px;display:flex;flex-direction:column;gap:3px;}
+.event-row{
+  display:flex;align-items:baseline;gap:10px;
+  padding:8px 12px;border-radius:4px;
+  font-family:var(--font-mono);font-size:12px;
+  background:var(--surface2);border:1px solid var(--border);
+  line-height:1.5;
+}
+.ev-time{font-size:10px;color:var(--muted);white-space:nowrap;flex-shrink:0;}
+.ev-level{font-size:10px;font-weight:700;letter-spacing:1px;white-space:nowrap;flex-shrink:0;min-width:60px;}
+.ev-msg{color:var(--text2);word-break:break-word;line-height:1.5;}
+.event-row.ev-critical{border-color:var(--accent-red)33;background:var(--accent-red)08;}
+.event-row.ev-warn{border-color:var(--accent-amber)22;background:var(--accent-amber)05;}
+.event-row.ev-ok{border-color:var(--accent-green)22;background:var(--accent-green)05;}
+.event-row.ev-cdx{border-color:var(--cdx)22;background:var(--cdx)04;}
+.event-row.ev-scmp{border-color:var(--scmp)22;background:var(--scmp)04;}
+
+/* ─── RIGHT PANEL (detail) ──────────────────────────────────── */
+#right-panel .panel-head{
+  font-family:var(--font-hud);font-size:11px;color:var(--muted2);letter-spacing:2px;
+  padding:13px 16px;border-bottom:1px solid var(--border2);
+  background:var(--surface2);
+}
+#detail-panel-right{
+  flex:1;overflow-y:auto;padding:14px 16px;
+}
+
+/* ─── UTILS ─────────────────────────────────────────────────── */
+.sep{border:none;border-top:1px solid var(--border);margin:10px 0;}
+
+@media(max-width:900px){
+  #main{flex-direction:column;height:auto;}
+  #left-panel,#right-panel{width:100%;border:none;border-bottom:2px solid var(--border2);}
+  #sparkline-row{grid-template-columns:repeat(2,1fr);}
+  .cmp-header-row,.cmp-row{grid-template-columns:120px repeat(5,1fr);}
 }
 </style>
 </head>
 <body>
 
-<div id="header">
-  <div id="logo">⬡ DataCore<span> OS</span></div>
-  <div id="subtitle">DIGITAL TWIN · CDX v2 EDITION</div>
-  <div id="header-right">
-    <div style="display:flex;align-items:center;gap:4px;"><span class="sc-label">SCENARIO:</span><span id="scenarios-wrap" style="display:flex;gap:3px;"></span></div>
-    <button id="sim-toggle" class="live">▶ LIVE</button>
-    <div style="display:flex;gap:12px;">
-      <div class="hstat"><div class="hstat-label">NODES</div><div class="hstat-val" id="h-nodes">0</div></div>
-      <div class="hstat"><div class="hstat-label">AVG CPU</div><div class="hstat-val" id="h-cpu">—</div></div>
-      <div class="hstat"><div class="hstat-label">POWER</div><div class="hstat-val" id="h-pwr">—</div></div>
-      <div class="hstat"><div class="hstat-label">SETUP</div><div class="hstat-val" id="h-setup" style="color:#39ff9a;font-size:9px;">CUSTOM</div></div>
-      <div class="hstat"><div class="hstat-label">ALERTS</div><div class="hstat-val" id="h-alerts">0</div></div>
+<!-- ─── HEADER ──────────────────────────────────────────────── -->
+<header id="header">
+  <div class="header-brand">DATA<span>CORE</span> OS</div>
+  <div class="hud-pills">
+    <div class="hud-pill">
+      <span class="lbl">NODES</span>
+      <span class="val" id="h-nodes">16</span>
+    </div>
+    <div class="hud-pill">
+      <span class="lbl">AVG CPU</span>
+      <span class="val" id="h-cpu">75.7%</span>
+    </div>
+    <div class="hud-pill">
+      <span class="lbl">POWER</span>
+      <span class="val" id="h-pwr">77.2kW</span>
+    </div>
+    <div class="hud-pill">
+      <span class="lbl">ALERTS</span>
+      <span class="val" id="h-alerts" style="color: rgb(255, 165, 2);">16</span>
     </div>
   </div>
+  <div class="header-right">
+    <span class="lbl" style="font-family:var(--font-hud);font-size:10px;color:var(--muted2);letter-spacing:2px;">SETUP:</span>
+    <span id="h-setup" style="color: rgb(57, 255, 154);">CDX v2</span>
+    <button id="sim-toggle" class="live">▶ LIVE</button>
+    <div class="sel-label-wrap"><span id="sel-label">SEL: <span style="color:#74b9ff">Cooling Unit 10</span></span></div>
+  </div>
+</header>
+
+<!-- ─── SCENARIO BAR ─────────────────────────────────────────── -->
+<div id="scenario-bar">
+  <span class="sc-bar-label">SCENARIO:</span>
+  <div id="scenarios-wrap"><button class="sc-btn">NORMAL</button><button class="sc-btn">PEAK</button><button class="sc-btn active">STRESS</button><button class="sc-btn">FAILOVER</button><button class="sc-btn">MAINT.</button></div>
+  <span class="palette-label">PLACE:</span>
+  <div id="palette"><button class="pal-btn">▣ SERVER</button><button class="pal-btn">⬡ GPU</button><button class="pal-btn">◫ STORAGE</button><button class="pal-btn">⬡ NET</button><button class="pal-btn">❄ COOLING</button><button class="pal-btn">⚡ POWER</button></div>
+  <span id="placing-label" style="display: none;">PLACING: NET SWITCH — click grid</span>
 </div>
 
+<!-- ─── SPARKLINES ───────────────────────────────────────────── -->
+<div id="sparkline-row">
+  <div id="sparkline-cards"><div class="stat-card"><div class="stat-label">AVG CPU %</div><div class="stat-val" id="sp-val-cpu" style="color:#00e5ff">75.7<span style="font-size:11px;color:var(--muted);margin-left:4px;">%</span></div><canvas id="sp-cpu" height="48" width="411"></canvas></div><div class="stat-card"><div class="stat-label">AVG MEM %</div><div class="stat-val" id="sp-val-ram" style="color:#a8ff78">79.8<span style="font-size:11px;color:var(--muted);margin-left:4px;">%</span></div><canvas id="sp-ram" height="48" width="411"></canvas></div><div class="stat-card"><div class="stat-label">AVG NET Mbps</div><div class="stat-val" id="sp-val-net" style="color:#f7d060">66.5<span style="font-size:11px;color:var(--muted);margin-left:4px;">Mb</span></div><canvas id="sp-net" height="48" width="411"></canvas></div><div class="stat-card"><div class="stat-label">TOTAL PWR kW</div><div class="stat-val" id="sp-val-pwr" style="color:#fd79a8">77.2<span style="font-size:11px;color:var(--muted);margin-left:4px;">kW</span></div><canvas id="sp-pwr" height="48" width="411"></canvas></div></div>
+</div>
+
+<!-- ─── MAIN ─────────────────────────────────────────────────── -->
 <div id="main">
-  <div id="left">
-    <div id="left-header">
-      <span class="panel-title">FLOOR LAYOUT</span>
-      <span style="font-size:7px;color:#ffffff;">DRAG · CLICK</span>
-      <span id="placing-label" style="margin-left:auto;font-size:7px;background:#00e5ff1a;color:var(--cyan);padding:2px 6px;border-radius:2px;border:1px solid #00e5ff44;display:none;"></span>
+
+  <!-- LEFT: Unit list -->
+  <div id="left-panel">
+    <div class="tab-bar" style="border-bottom:2px solid var(--border2);">
+      <div style="font-family:var(--font-hud);font-size:11px;color:var(--muted2);letter-spacing:2px;padding:12px 16px;align-self:center;">UNITS</div>
     </div>
-    <div id="palette"></div>
-    <div id="floor-wrap"><div id="grid"></div><div id="legend"></div></div>
+    <div style="overflow-y:auto;flex:1;padding:8px;">
+      <div id="config-list"><div class="cfg-unit"><div style="display:flex;align-items:center;gap:8px;"><span style="color:#00e5ff;font-size:16px;">▣</span><div style="flex:1;min-width:0;"><div class="cfg-unit-name">Server Rack 1</div><div class="cfg-unit-sub">[1,1] Server Rack</div></div><div class="cfg-dot" style="background:#ffa502"></div></div></div><div class="cfg-unit"><div style="display:flex;align-items:center;gap:8px;"><span style="color:#00e5ff;font-size:16px;">▣</span><div style="flex:1;min-width:0;"><div class="cfg-unit-name">Server Rack 2</div><div class="cfg-unit-sub">[5,1] Server Rack</div></div><div class="cfg-dot" style="background:#ffa502"></div></div></div><div class="cfg-unit"><div style="display:flex;align-items:center;gap:8px;"><span style="color:#00e5ff;font-size:16px;">▣</span><div style="flex:1;min-width:0;"><div class="cfg-unit-name">Server Rack 3</div><div class="cfg-unit-sub">[8,1] Server Rack</div></div><div class="cfg-dot" style="background:#ffa502"></div></div></div><div class="cfg-unit"><div style="display:flex;align-items:center;gap:8px;"><span style="color:#00e5ff;font-size:16px;">▣</span><div style="flex:1;min-width:0;"><div class="cfg-unit-name">Server Rack 4</div><div class="cfg-unit-sub">[12,1] Server Rack</div></div><div class="cfg-dot" style="background:#ffa502"></div></div></div><div class="cfg-unit"><div style="display:flex;align-items:center;gap:8px;"><span style="color:#00e5ff;font-size:16px;">▣</span><div style="flex:1;min-width:0;"><div class="cfg-unit-name">Server Rack 5</div><div class="cfg-unit-sub">[12,5] Server Rack</div></div><div class="cfg-dot" style="background:#ffa502"></div></div></div><div class="cfg-unit"><div style="display:flex;align-items:center;gap:8px;"><span style="color:#00e5ff;font-size:16px;">▣</span><div style="flex:1;min-width:0;"><div class="cfg-unit-name">Server Rack 6</div><div class="cfg-unit-sub">[1,5] Server Rack</div></div><div class="cfg-dot" style="background:#ffa502"></div></div></div><div class="cfg-unit"><div style="display:flex;align-items:center;gap:8px;"><span style="color:#00e5ff;font-size:16px;">▣</span><div style="flex:1;min-width:0;"><div class="cfg-unit-name">Server Rack 7</div><div class="cfg-unit-sub">[5,4] Server Rack</div></div><div class="cfg-dot" style="background:#ffa502"></div></div></div><div class="cfg-unit"><div style="display:flex;align-items:center;gap:8px;"><span style="color:#00e5ff;font-size:16px;">▣</span><div style="flex:1;min-width:0;"><div class="cfg-unit-name">Server Rack 8</div><div class="cfg-unit-sub">[12,4] Server Rack</div></div><div class="cfg-dot" style="background:#ffa502"></div></div></div><div class="cfg-unit"><div style="display:flex;align-items:center;gap:8px;"><span style="color:#74b9ff;font-size:16px;">❄</span><div style="flex:1;min-width:0;"><div class="cfg-unit-name">Cooling Unit 9</div><div class="cfg-unit-sub">[1,4] Cooling Unit</div></div><div class="cfg-dot" style="background:#ffa502"></div></div></div><div class="cfg-unit active" style="border-color: rgba(116, 185, 255, 0.333);"><div style="display:flex;align-items:center;gap:8px;"><span style="color:#74b9ff;font-size:16px;">❄</span><div style="flex:1;min-width:0;"><div class="cfg-unit-name">Cooling Unit 10</div><div class="cfg-unit-sub">[5,5] Cooling Unit</div></div><div class="cfg-dot" style="background:#ffa502"></div></div></div><div class="cfg-unit"><div style="display:flex;align-items:center;gap:8px;"><span style="color:#74b9ff;font-size:16px;">❄</span><div style="flex:1;min-width:0;"><div class="cfg-unit-name">Cooling Unit 11</div><div class="cfg-unit-sub">[12,8] Cooling Unit</div></div><div class="cfg-dot" style="background:#ffa502"></div></div></div><div class="cfg-unit"><div style="display:flex;align-items:center;gap:8px;"><span style="color:#fd79a8;font-size:16px;">⚡</span><div style="flex:1;min-width:0;"><div class="cfg-unit-name">Power UPS 12</div><div class="cfg-unit-sub">[1,8] Power UPS</div></div><div class="cfg-dot" style="background:#ffa502"></div></div></div><div class="cfg-unit"><div style="display:flex;align-items:center;gap:8px;"><span style="color:#fd79a8;font-size:16px;">⚡</span><div style="flex:1;min-width:0;"><div class="cfg-unit-name">Power UPS 13</div><div class="cfg-unit-sub">[8,5] Power UPS</div></div><div class="cfg-dot" style="background:#ffa502"></div></div></div><div class="cfg-unit"><div style="display:flex;align-items:center;gap:8px;"><span style="color:#f7d060;font-size:16px;">⬡</span><div style="flex:1;min-width:0;"><div class="cfg-unit-name">Net Switch 14</div><div class="cfg-unit-sub">[5,8] Net Switch</div></div><div class="cfg-dot" style="background:#ffa502"></div></div></div><div class="cfg-unit"><div style="display:flex;align-items:center;gap:8px;"><span style="color:#f7d060;font-size:16px;">⬡</span><div style="flex:1;min-width:0;"><div class="cfg-unit-name">Net Switch 15</div><div class="cfg-unit-sub">[8,4] Net Switch</div></div><div class="cfg-dot" style="background:#ffa502"></div></div></div><div class="cfg-unit"><div style="display:flex;align-items:center;gap:8px;"><span style="color:#a8ff78;font-size:16px;">◫</span><div style="flex:1;min-width:0;"><div class="cfg-unit-name">Storage Array 16</div><div class="cfg-unit-sub">[8,8] Storage Array</div></div><div class="cfg-dot" style="background:#ffa502"></div></div></div></div>
+    </div>
+    <div id="detail-panel" style="border-top-width: ; border-top-style: ; border-color: rgba(116, 185, 255, 0.2); display: block;"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;"><span style="font-family:'Orbitron',sans-serif;font-size:13px;font-weight:700;color:#74b9ff">❄ Cooling Unit 10</span><span style="font-family:'Share Tech Mono',monospace;font-size:11px;color:#ffa502;background:#ffa50222;padding:4px 10px;border-radius:3px;">WARN</span></div><div class="det-grid"><div class="det-cell"><div class="det-label">CPU LOAD</div><div class="det-val">0%</div><div class="det-bar-wrap"><div class="det-bar" style="width:0%;background:#00e5ff"></div></div></div><div class="det-cell"><div class="det-label">MEMORY</div><div class="det-val">0%</div><div class="det-bar-wrap"><div class="det-bar" style="width:0%;background:#00e5ff"></div></div></div><div class="det-cell"><div class="det-label">TEMP</div><div class="det-val">-2°C</div><div class="det-bar-wrap"><div class="det-bar" style="width:0%;background:#00e5ff"></div></div></div><div class="det-cell"><div class="det-label">NETWORK</div><div class="det-val">84.6Mb</div><div class="det-bar-wrap"><div class="det-bar" style="width:56.4%;background:#00e5ff"></div></div></div><div class="det-cell"><div class="det-label">POWER</div><div class="det-val">5.1kW</div><div class="det-bar-wrap"><div class="det-bar" style="width:40.8%;background:#00e5ff"></div></div></div><div class="det-cell"><div class="det-label">LOAD</div><div class="det-val">79.6%</div><div class="det-bar-wrap"><div class="det-bar" style="width:79.6%;background:#ffa502"></div></div></div></div></div>
   </div>
 
-  <div id="right">
-    <div id="tabs">
-      <button class="tab-btn active" data-tab="monitor">📊 MONITOR</button>
-      <button class="tab-btn" data-tab="setups">🏗 SETUPS</button>
-      <button class="tab-btn" data-tab="compare">⚖ COMPARE</button>
-      <button class="tab-btn" data-tab="config">⚙ CONFIG</button>
-      <button class="tab-btn" data-tab="events">📋 EVENTS</button>
-      <button class="tab-btn" data-tab="capacity">📈 CAPACITY</button>
-      <div id="sel-label"></div>
+  <!-- CENTER: Tabs -->
+  <div id="center-panel">
+    <div class="tab-bar">
+      <button class="tab-btn" data-tab="grid">FLOOR MAP</button>
+      <button class="tab-btn" data-tab="table">UNITS TABLE</button>
+      <button class="tab-btn" data-tab="capacity">CAPACITY</button>
+      <button class="tab-btn" data-tab="setups">SETUPS</button>
+      <button class="tab-btn active" data-tab="compare">COMPARE</button>
+      <button class="tab-btn" data-tab="events">EVENT LOG</button>
+      <button class="tab-btn" data-tab="config">CONFIG</button>
     </div>
 
-    <div id="tab-monitor" class="tab-content active">
-      <div class="g4" id="sparkline-cards"></div>
-      <div class="card" style="padding:0;overflow:hidden;">
-        <div style="padding:6px 11px;border-bottom:1px solid var(--border);font-size:8px;color:var(--cyan);letter-spacing:2px;">UNIT STATUS TABLE</div>
-        <div style="overflow:auto;max-height:240px;">
-          <table id="unit-table"><thead><tr><th>UNIT</th><th>TYPE</th><th>STATUS</th><th>CPU%</th><th>RAM%</th><th>°C</th><th>PWR</th><th>NET</th></tr></thead><tbody id="unit-tbody"></tbody></table>
+    <!-- GRID TAB -->
+    <div class="tab-content" id="tab-grid">
+      <div id="grid-area">
+        <div id="grid"><div class="cell occupied cdx-glow" data-col="1" data-row="1" data-uid="xyoc99" draggable="true" style="border-color: rgba(0, 229, 255, 0.2); background: rgb(13, 21, 32);"><div class="unit-icon" style="color: rgb(0, 229, 255);">▣</div><div class="unit-bar-wrap"><div class="unit-bar" style="width: 81.2%; background: rgb(255, 165, 2);"></div></div><div class="unit-dot" style="color: rgb(255, 165, 2);">◐</div></div><div class="cell" data-col="2" data-row="1">2</div><div class="cell" data-col="3" data-row="1">3</div><div class="cell" data-col="4" data-row="1">4</div><div class="cell occupied cdx-glow" data-col="5" data-row="1" data-uid="lwar76" draggable="true" style="border-color: rgba(0, 229, 255, 0.2); background: rgb(13, 21, 32);"><div class="unit-icon" style="color: rgb(0, 229, 255);">▣</div><div class="unit-bar-wrap"><div class="unit-bar" style="width: 75.1%; background: rgb(255, 165, 2);"></div></div><div class="unit-dot" style="color: rgb(255, 165, 2);">◐</div></div><div class="cell" data-col="6" data-row="1">6</div><div class="cell" data-col="7" data-row="1">7</div><div class="cell occupied cdx-glow" data-col="8" data-row="1" data-uid="6jom0b" draggable="true" style="border-color: rgba(0, 229, 255, 0.2); background: rgb(13, 21, 32);"><div class="unit-icon" style="color: rgb(0, 229, 255);">▣</div><div class="unit-bar-wrap"><div class="unit-bar" style="width: 73%; background: rgb(0, 229, 255);"></div></div><div class="unit-dot" style="color: rgb(255, 165, 2);">◐</div></div><div class="cell" data-col="9" data-row="1">9</div><div class="cell" data-col="10" data-row="1">10</div><div class="cell" data-col="11" data-row="1">11</div><div class="cell occupied cdx-glow" data-col="12" data-row="1" data-uid="6vdbew" draggable="true" style="border-color: rgba(0, 229, 255, 0.2); background: rgb(13, 21, 32);"><div class="unit-icon" style="color: rgb(0, 229, 255);">▣</div><div class="unit-bar-wrap"><div class="unit-bar" style="width: 64.6%; background: rgb(0, 229, 255);"></div></div><div class="unit-dot" style="color: rgb(255, 165, 2);">◐</div></div><div class="cell" data-col="1" data-row="2">2</div><div class="cell" data-col="2" data-row="2"></div><div class="cell" data-col="3" data-row="2"></div><div class="cell" data-col="4" data-row="2"></div><div class="cell" data-col="5" data-row="2"></div><div class="cell" data-col="6" data-row="2"></div><div class="cell" data-col="7" data-row="2"></div><div class="cell" data-col="8" data-row="2"></div><div class="cell" data-col="9" data-row="2"></div><div class="cell" data-col="10" data-row="2"></div><div class="cell" data-col="11" data-row="2"></div><div class="cell" data-col="12" data-row="2"></div><div class="cell" data-col="1" data-row="3">3</div><div class="cell" data-col="2" data-row="3"></div><div class="cell" data-col="3" data-row="3"></div><div class="cell" data-col="4" data-row="3"></div><div class="cell" data-col="5" data-row="3"></div><div class="cell" data-col="6" data-row="3"></div><div class="cell" data-col="7" data-row="3"></div><div class="cell" data-col="8" data-row="3"></div><div class="cell" data-col="9" data-row="3"></div><div class="cell" data-col="10" data-row="3"></div><div class="cell" data-col="11" data-row="3"></div><div class="cell" data-col="12" data-row="3"></div><div class="cell occupied" data-col="1" data-row="4" data-uid="hqmwy9" draggable="true" style="border-color: rgba(116, 185, 255, 0.2); background: rgb(13, 21, 32);"><div class="unit-icon" style="color: rgb(116, 185, 255);">❄</div><div class="unit-bar-wrap"><div class="unit-bar" style="width: 30.6%; background: rgb(0, 229, 255);"></div></div><div class="unit-dot" style="color: rgb(255, 165, 2);">◐</div></div><div class="cell" data-col="2" data-row="4"></div><div class="cell" data-col="3" data-row="4"></div><div class="cell" data-col="4" data-row="4"></div><div class="cell occupied cdx-glow" data-col="5" data-row="4" data-uid="lrini0" draggable="true" style="border-color: rgba(0, 229, 255, 0.2); background: rgb(13, 21, 32);"><div class="unit-icon" style="color: rgb(0, 229, 255);">▣</div><div class="unit-bar-wrap"><div class="unit-bar" style="width: 85.3%; background: rgb(255, 165, 2);"></div></div><div class="unit-dot" style="color: rgb(255, 165, 2);">◐</div></div><div class="cell" data-col="6" data-row="4"></div><div class="cell" data-col="7" data-row="4"></div><div class="cell occupied" data-col="8" data-row="4" data-uid="z1v5w3" draggable="true" style="border-color: rgba(247, 208, 96, 0.2); background: rgb(13, 21, 32);"><div class="unit-icon" style="color: rgb(247, 208, 96);">⬡</div><div class="unit-bar-wrap"><div class="unit-bar" style="width: 10.2%; background: rgb(0, 229, 255);"></div></div><div class="unit-dot" style="color: rgb(255, 165, 2);">◐</div></div><div class="cell" data-col="9" data-row="4"></div><div class="cell" data-col="10" data-row="4"></div><div class="cell" data-col="11" data-row="4"></div><div class="cell occupied cdx-glow" data-col="12" data-row="4" data-uid="sdve83" draggable="true" style="border-color: rgba(0, 229, 255, 0.2); background: rgb(13, 21, 32);"><div class="unit-icon" style="color: rgb(0, 229, 255);">▣</div><div class="unit-bar-wrap"><div class="unit-bar" style="width: 80.2%; background: rgb(255, 165, 2);"></div></div><div class="unit-dot" style="color: rgb(255, 165, 2);">◐</div></div><div class="cell occupied cdx-glow" data-col="1" data-row="5" data-uid="p07z2w" draggable="true" style="border-color: rgba(0, 229, 255, 0.2); background: rgb(13, 21, 32);"><div class="unit-icon" style="color: rgb(0, 229, 255);">▣</div><div class="unit-bar-wrap"><div class="unit-bar" style="width: 65.8%; background: rgb(0, 229, 255);"></div></div><div class="unit-dot" style="color: rgb(255, 165, 2);">◐</div></div><div class="cell" data-col="2" data-row="5"></div><div class="cell" data-col="3" data-row="5"></div><div class="cell" data-col="4" data-row="5"></div><div class="cell occupied selected" data-col="5" data-row="5" data-uid="aeyf6c" draggable="true" style="border-color: rgba(116, 185, 255, 0.533); background: rgba(116, 185, 255, 0.094);"><div class="unit-icon" style="color: rgb(116, 185, 255);">❄</div><div class="unit-bar-wrap"><div class="unit-bar" style="width: 30.6%; background: rgb(0, 229, 255);"></div></div><div class="unit-dot" style="color: rgb(255, 165, 2);">◐</div></div><div class="cell" data-col="6" data-row="5"></div><div class="cell" data-col="7" data-row="5"></div><div class="cell occupied" data-col="8" data-row="5" data-uid="iqrwe0" draggable="true" style="border-color: rgba(253, 121, 168, 0.2); background: rgb(13, 21, 32);"><div class="unit-icon" style="color: rgb(253, 121, 168);">⚡</div><div class="unit-bar-wrap"><div class="unit-bar" style="width: 0%; background: rgb(0, 229, 255);"></div></div><div class="unit-dot" style="color: rgb(255, 165, 2);">◐</div></div><div class="cell" data-col="9" data-row="5"></div><div class="cell" data-col="10" data-row="5"></div><div class="cell" data-col="11" data-row="5"></div><div class="cell occupied cdx-glow" data-col="12" data-row="5" data-uid="vm7s34" draggable="true" style="border-color: rgba(0, 229, 255, 0.2); background: rgb(13, 21, 32);"><div class="unit-icon" style="color: rgb(0, 229, 255);">▣</div><div class="unit-bar-wrap"><div class="unit-bar" style="width: 76.6%; background: rgb(255, 165, 2);"></div></div><div class="unit-dot" style="color: rgb(255, 165, 2);">◐</div></div><div class="cell" data-col="1" data-row="6">6</div><div class="cell" data-col="2" data-row="6"></div><div class="cell" data-col="3" data-row="6"></div><div class="cell" data-col="4" data-row="6"></div><div class="cell" data-col="5" data-row="6"></div><div class="cell" data-col="6" data-row="6"></div><div class="cell" data-col="7" data-row="6"></div><div class="cell" data-col="8" data-row="6"></div><div class="cell" data-col="9" data-row="6"></div><div class="cell" data-col="10" data-row="6"></div><div class="cell" data-col="11" data-row="6"></div><div class="cell" data-col="12" data-row="6"></div><div class="cell" data-col="1" data-row="7">7</div><div class="cell" data-col="2" data-row="7"></div><div class="cell" data-col="3" data-row="7"></div><div class="cell" data-col="4" data-row="7"></div><div class="cell" data-col="5" data-row="7"></div><div class="cell" data-col="6" data-row="7"></div><div class="cell" data-col="7" data-row="7"></div><div class="cell" data-col="8" data-row="7"></div><div class="cell" data-col="9" data-row="7"></div><div class="cell" data-col="10" data-row="7"></div><div class="cell" data-col="11" data-row="7"></div><div class="cell" data-col="12" data-row="7"></div><div class="cell occupied" data-col="1" data-row="8" data-uid="wuauqn" draggable="true" style="border-color: rgba(253, 121, 168, 0.2); background: rgb(13, 21, 32);"><div class="unit-icon" style="color: rgb(253, 121, 168);">⚡</div><div class="unit-bar-wrap"><div class="unit-bar" style="width: 0%; background: rgb(0, 229, 255);"></div></div><div class="unit-dot" style="color: rgb(255, 165, 2);">◐</div></div><div class="cell" data-col="2" data-row="8"></div><div class="cell" data-col="3" data-row="8"></div><div class="cell" data-col="4" data-row="8"></div><div class="cell occupied" data-col="5" data-row="8" data-uid="k6iidq" draggable="true" style="border-color: rgba(247, 208, 96, 0.2); background: rgb(13, 21, 32);"><div class="unit-icon" style="color: rgb(247, 208, 96);">⬡</div><div class="unit-bar-wrap"><div class="unit-bar" style="width: 10.2%; background: rgb(0, 229, 255);"></div></div><div class="unit-dot" style="color: rgb(255, 165, 2);">◐</div></div><div class="cell" data-col="6" data-row="8"></div><div class="cell" data-col="7" data-row="8"></div><div class="cell occupied" data-col="8" data-row="8" data-uid="w0xfl7" draggable="true" style="border-color: rgba(168, 255, 120, 0.2); background: rgb(13, 21, 32);"><div class="unit-icon" style="color: rgb(168, 255, 120);">◫</div><div class="unit-bar-wrap"><div class="unit-bar" style="width: 79.7%; background: rgb(255, 165, 2);"></div></div><div class="unit-dot" style="color: rgb(255, 165, 2);">◐</div></div><div class="cell" data-col="9" data-row="8"></div><div class="cell" data-col="10" data-row="8"></div><div class="cell" data-col="11" data-row="8"></div><div class="cell occupied" data-col="12" data-row="8" data-uid="nc0mui" draggable="true" style="border-color: rgba(116, 185, 255, 0.2); background: rgb(13, 21, 32);"><div class="unit-icon" style="color: rgb(116, 185, 255);">❄</div><div class="unit-bar-wrap"><div class="unit-bar" style="width: 30.6%; background: rgb(0, 229, 255);"></div></div><div class="unit-dot" style="color: rgb(255, 165, 2);">◐</div></div></div>
+      </div>
+      <div id="legend"><div class="leg-item"><span style="color:#00e5ff">▣</span> Server Rack</div><div class="leg-item"><span style="color:#ff6b35">⬡</span> GPU Cluster</div><div class="leg-item"><span style="color:#a8ff78">◫</span> Storage Array</div><div class="leg-item"><span style="color:#f7d060">⬡</span> Net Switch</div><div class="leg-item"><span style="color:#74b9ff">❄</span> Cooling Unit</div><div class="leg-item"><span style="color:#fd79a8">⚡</span> Power UPS</div></div>
+      <div id="detail-panel-right"></div>
+    </div>
+
+    <!-- TABLE TAB -->
+    <div class="tab-content" id="tab-table">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>NAME</th><th>TYPE</th><th>STATUS</th>
+              <th>CPU %</th><th>RAM %</th><th>TEMP °C</th>
+              <th>PWR kW</th><th>NET Mbps</th>
+            </tr>
+          </thead>
+          <tbody id="unit-tbody"><tr class=""><td style="color:#00e5ff;font-size:13px;">▣ Server Rack 1</td><td style="color:var(--muted2)">Server Rack</td><td><span style="color:#ffa502;font-size:11px;font-weight:700;">WARN</span></td><td><div class="tbar-wrap"><div class="tbar"><div class="tbar-fill" style="width:81.2%;background:#ffa502"></div></div><span style="font-size:12px;">81.2</span></div></td><td><div class="tbar-wrap"><div class="tbar"><div class="tbar-fill" style="width:79.8%;background:#ffa502"></div></div><span style="font-size:12px;">79.8</span></div></td><td style="color:var(--text2)">45.2</td><td><div class="tbar-wrap"><div class="tbar"><div class="tbar-fill" style="width:6.9%;background:#00e5ff"></div></div><span style="font-size:12px;">6.9</span></div></td><td><div class="tbar-wrap"><div class="tbar"><div class="tbar-fill" style="width:41%;background:#00e5ff"></div></div><span style="font-size:12px;">41</span></div></td></tr><tr class=""><td style="color:#00e5ff;font-size:13px;">▣ Server Rack 2</td><td style="color:var(--muted2)">Server Rack</td><td><span style="color:#ffa502;font-size:11px;font-weight:700;">WARN</span></td><td><div class="tbar-wrap"><div class="tbar"><div class="tbar-fill" style="width:75.1%;background:#ffa502"></div></div><span style="font-size:12px;">75.1</span></div></td><td><div class="tbar-wrap"><div class="tbar"><div class="tbar-fill" style="width:79.7%;background:#ffa502"></div></div><span style="font-size:12px;">79.7</span></div></td><td style="color:var(--text2)">44.9</td><td><div class="tbar-wrap"><div class="tbar"><div class="tbar-fill" style="width:6.8%;background:#00e5ff"></div></div><span style="font-size:12px;">6.8</span></div></td><td><div class="tbar-wrap"><div class="tbar"><div class="tbar-fill" style="width:78.2%;background:#ffa502"></div></div><span style="font-size:12px;">78.2</span></div></td></tr><tr class=""><td style="color:#00e5ff;font-size:13px;">▣ Server Rack 3</td><td style="color:var(--muted2)">Server Rack</td><td><span style="color:#ffa502;font-size:11px;font-weight:700;">WARN</span></td><td><div class="tbar-wrap"><div class="tbar"><div class="tbar-fill" style="width:73%;background:#00e5ff"></div></div><span style="font-size:12px;">73</span></div></td><td><div class="tbar-wrap"><div class="tbar"><div class="tbar-fill" style="width:79.8%;background:#ffa502"></div></div><span style="font-size:12px;">79.8</span></div></td><td style="color:var(--text2)">45</td><td><div class="tbar-wrap"><div class="tbar"><div class="tbar-fill" style="width:6.9%;background:#00e5ff"></div></div><span style="font-size:12px;">6.9</span></div></td><td><div class="tbar-wrap"><div class="tbar"><div class="tbar-fill" style="width:44%;background:#00e5ff"></div></div><span style="font-size:12px;">44</span></div></td></tr><tr class=""><td style="color:#00e5ff;font-size:13px;">▣ Server Rack 4</td><td style="color:var(--muted2)">Server Rack</td><td><span style="color:#ffa502;font-size:11px;font-weight:700;">WARN</span></td><td><div class="tbar-wrap"><div class="tbar"><div class="tbar-fill" style="width:64.6%;background:#00e5ff"></div></div><span style="font-size:12px;">64.6</span></div></td><td><div class="tbar-wrap"><div class="tbar"><div class="tbar-fill" style="width:79.9%;background:#ffa502"></div></div><span style="font-size:12px;">79.9</span></div></td><td style="color:var(--text2)">45.8</td><td><div class="tbar-wrap"><div class="tbar"><div class="tbar-fill" style="width:6.9%;background:#00e5ff"></div></div><span style="font-size:12px;">6.9</span></div></td><td><div class="tbar-wrap"><div class="tbar"><div class="tbar-fill" style="width:42.1%;background:#00e5ff"></div></div><span style="font-size:12px;">42.1</span></div></td></tr><tr class=""><td style="color:#00e5ff;font-size:13px;">▣ Server Rack 5</td><td style="color:var(--muted2)">Server Rack</td><td><span style="color:#ffa502;font-size:11px;font-weight:700;">WARN</span></td><td><div class="tbar-wrap"><div class="tbar"><div class="tbar-fill" style="width:76.6%;background:#ffa502"></div></div><span style="font-size:12px;">76.6</span></div></td><td><div class="tbar-wrap"><div class="tbar"><div class="tbar-fill" style="width:79.8%;background:#ffa502"></div></div><span style="font-size:12px;">79.8</span></div></td><td style="color:var(--text2)">45</td><td><div class="tbar-wrap"><div class="tbar"><div class="tbar-fill" style="width:6.9%;background:#00e5ff"></div></div><span style="font-size:12px;">6.9</span></div></td><td><div class="tbar-wrap"><div class="tbar"><div class="tbar-fill" style="width:71%;background:#00e5ff"></div></div><span style="font-size:12px;">71</span></div></td></tr><tr class=""><td style="color:#00e5ff;font-size:13px;">▣ Server Rack 6</td><td style="color:var(--muted2)">Server Rack</td><td><span style="color:#ffa502;font-size:11px;font-weight:700;">WARN</span></td><td><div class="tbar-wrap"><div class="tbar"><div class="tbar-fill" style="width:65.8%;background:#00e5ff"></div></div><span style="font-size:12px;">65.8</span></div></td><td><div class="tbar-wrap"><div class="tbar"><div class="tbar-fill" style="width:79.8%;background:#ffa502"></div></div><span style="font-size:12px;">79.8</span></div></td><td style="color:var(--text2)">45.7</td><td><div class="tbar-wrap"><div class="tbar"><div class="tbar-fill" style="width:6.9%;background:#00e5ff"></div></div><span style="font-size:12px;">6.9</span></div></td><td><div class="tbar-wrap"><div class="tbar"><div class="tbar-fill" style="width:85.6%;background:#ffa502"></div></div><span style="font-size:12px;">85.6</span></div></td></tr><tr class=""><td style="color:#00e5ff;font-size:13px;">▣ Server Rack 7</td><td style="color:var(--muted2)">Server Rack</td><td><span style="color:#ffa502;font-size:11px;font-weight:700;">WARN</span></td><td><div class="tbar-wrap"><div class="tbar"><div class="tbar-fill" style="width:85.3%;background:#ffa502"></div></div><span style="font-size:12px;">85.3</span></div></td><td><div class="tbar-wrap"><div class="tbar"><div class="tbar-fill" style="width:79.8%;background:#ffa502"></div></div><span style="font-size:12px;">79.8</span></div></td><td style="color:var(--text2)">45.2</td><td><div class="tbar-wrap"><div class="tbar"><div class="tbar-fill" style="width:6.9%;background:#00e5ff"></div></div><span style="font-size:12px;">6.9</span></div></td><td><div class="tbar-wrap"><div class="tbar"><div class="tbar-fill" style="width:72.1%;background:#00e5ff"></div></div><span style="font-size:12px;">72.1</span></div></td></tr><tr class=""><td style="color:#00e5ff;font-size:13px;">▣ Server Rack 8</td><td style="color:var(--muted2)">Server Rack</td><td><span style="color:#ffa502;font-size:11px;font-weight:700;">WARN</span></td><td><div class="tbar-wrap"><div class="tbar"><div class="tbar-fill" style="width:80.2%;background:#ffa502"></div></div><span style="font-size:12px;">80.2</span></div></td><td><div class="tbar-wrap"><div class="tbar"><div class="tbar-fill" style="width:79.8%;background:#ffa502"></div></div><span style="font-size:12px;">79.8</span></div></td><td style="color:var(--text2)">44.8</td><td><div class="tbar-wrap"><div class="tbar"><div class="tbar-fill" style="width:6.9%;background:#00e5ff"></div></div><span style="font-size:12px;">6.9</span></div></td><td><div class="tbar-wrap"><div class="tbar"><div class="tbar-fill" style="width:70.1%;background:#00e5ff"></div></div><span style="font-size:12px;">70.1</span></div></td></tr><tr class=""><td style="color:#74b9ff;font-size:13px;">❄ Cooling Unit 9</td><td style="color:var(--muted2)">Cooling Unit</td><td><span style="color:#ffa502;font-size:11px;font-weight:700;">WARN</span></td><td><div class="tbar-wrap"><div class="tbar"><div class="tbar-fill" style="width:0%;background:#00e5ff"></div></div><span style="font-size:12px;">—</span></div></td><td><div class="tbar-wrap"><div class="tbar"><div class="tbar-fill" style="width:0%;background:#00e5ff"></div></div><span style="font-size:12px;">—</span></div></td><td style="color:var(--text2)">-3</td><td><div class="tbar-wrap"><div class="tbar"><div class="tbar-fill" style="width:5.1%;background:#00e5ff"></div></div><span style="font-size:12px;">5.1</span></div></td><td><div class="tbar-wrap"><div class="tbar"><div class="tbar-fill" style="width:35.4%;background:#00e5ff"></div></div><span style="font-size:12px;">35.4</span></div></td></tr><tr class="row-sel"><td style="color:#74b9ff;font-size:13px;">❄ Cooling Unit 10</td><td style="color:var(--muted2)">Cooling Unit</td><td><span style="color:#ffa502;font-size:11px;font-weight:700;">WARN</span></td><td><div class="tbar-wrap"><div class="tbar"><div class="tbar-fill" style="width:0%;background:#00e5ff"></div></div><span style="font-size:12px;">—</span></div></td><td><div class="tbar-wrap"><div class="tbar"><div class="tbar-fill" style="width:0%;background:#00e5ff"></div></div><span style="font-size:12px;">—</span></div></td><td style="color:var(--text2)">-2</td><td><div class="tbar-wrap"><div class="tbar"><div class="tbar-fill" style="width:5.1%;background:#00e5ff"></div></div><span style="font-size:12px;">5.1</span></div></td><td><div class="tbar-wrap"><div class="tbar"><div class="tbar-fill" style="width:84.6%;background:#ffa502"></div></div><span style="font-size:12px;">84.6</span></div></td></tr><tr class=""><td style="color:#74b9ff;font-size:13px;">❄ Cooling Unit 11</td><td style="color:var(--muted2)">Cooling Unit</td><td><span style="color:#ffa502;font-size:11px;font-weight:700;">WARN</span></td><td><div class="tbar-wrap"><div class="tbar"><div class="tbar-fill" style="width:0%;background:#00e5ff"></div></div><span style="font-size:12px;">—</span></div></td><td><div class="tbar-wrap"><div class="tbar"><div class="tbar-fill" style="width:0%;background:#00e5ff"></div></div><span style="font-size:12px;">—</span></div></td><td style="color:var(--text2)">-3.1</td><td><div class="tbar-wrap"><div class="tbar"><div class="tbar-fill" style="width:5.1%;background:#00e5ff"></div></div><span style="font-size:12px;">5.1</span></div></td><td><div class="tbar-wrap"><div class="tbar"><div class="tbar-fill" style="width:71.1%;background:#00e5ff"></div></div><span style="font-size:12px;">71.1</span></div></td></tr><tr class=""><td style="color:#fd79a8;font-size:13px;">⚡ Power UPS 12</td><td style="color:var(--muted2)">Power UPS</td><td><span style="color:#ffa502;font-size:11px;font-weight:700;">WARN</span></td><td><div class="tbar-wrap"><div class="tbar"><div class="tbar-fill" style="width:0%;background:#00e5ff"></div></div><span style="font-size:12px;">—</span></div></td><td><div class="tbar-wrap"><div class="tbar"><div class="tbar-fill" style="width:0%;background:#00e5ff"></div></div><span style="font-size:12px;">—</span></div></td><td style="color:var(--text2)">35.3</td><td><div class="tbar-wrap"><div class="tbar"><div class="tbar-fill" style="width:0%;background:#00e5ff"></div></div><span style="font-size:12px;">—</span></div></td><td><div class="tbar-wrap"><div class="tbar"><div class="tbar-fill" style="width:66.6%;background:#00e5ff"></div></div><span style="font-size:12px;">66.6</span></div></td></tr><tr class=""><td style="color:#fd79a8;font-size:13px;">⚡ Power UPS 13</td><td style="color:var(--muted2)">Power UPS</td><td><span style="color:#ffa502;font-size:11px;font-weight:700;">WARN</span></td><td><div class="tbar-wrap"><div class="tbar"><div class="tbar-fill" style="width:0%;background:#00e5ff"></div></div><span style="font-size:12px;">—</span></div></td><td><div class="tbar-wrap"><div class="tbar"><div class="tbar-fill" style="width:0%;background:#00e5ff"></div></div><span style="font-size:12px;">—</span></div></td><td style="color:var(--text2)">35.8</td><td><div class="tbar-wrap"><div class="tbar"><div class="tbar-fill" style="width:0%;background:#00e5ff"></div></div><span style="font-size:12px;">—</span></div></td><td><div class="tbar-wrap"><div class="tbar"><div class="tbar-fill" style="width:82.7%;background:#ffa502"></div></div><span style="font-size:12px;">82.7</span></div></td></tr><tr class=""><td style="color:#f7d060;font-size:13px;">⬡ Net Switch 14</td><td style="color:var(--muted2)">Net Switch</td><td><span style="color:#ffa502;font-size:11px;font-weight:700;">WARN</span></td><td><div class="tbar-wrap"><div class="tbar"><div class="tbar-fill" style="width:0%;background:#00e5ff"></div></div><span style="font-size:12px;">—</span></div></td><td><div class="tbar-wrap"><div class="tbar"><div class="tbar-fill" style="width:0%;background:#00e5ff"></div></div><span style="font-size:12px;">—</span></div></td><td style="color:var(--text2)">39.2</td><td><div class="tbar-wrap"><div class="tbar"><div class="tbar-fill" style="width:1.7%;background:#00e5ff"></div></div><span style="font-size:12px;">1.7</span></div></td><td><div class="tbar-wrap"><div class="tbar"><div class="tbar-fill" style="width:69.1%;background:#00e5ff"></div></div><span style="font-size:12px;">69.1</span></div></td></tr><tr class=""><td style="color:#f7d060;font-size:13px;">⬡ Net Switch 15</td><td style="color:var(--muted2)">Net Switch</td><td><span style="color:#ffa502;font-size:11px;font-weight:700;">WARN</span></td><td><div class="tbar-wrap"><div class="tbar"><div class="tbar-fill" style="width:0%;background:#00e5ff"></div></div><span style="font-size:12px;">—</span></div></td><td><div class="tbar-wrap"><div class="tbar"><div class="tbar-fill" style="width:0%;background:#00e5ff"></div></div><span style="font-size:12px;">—</span></div></td><td style="color:var(--text2)">38.4</td><td><div class="tbar-wrap"><div class="tbar"><div class="tbar-fill" style="width:1.7%;background:#00e5ff"></div></div><span style="font-size:12px;">1.7</span></div></td><td><div class="tbar-wrap"><div class="tbar"><div class="tbar-fill" style="width:68.8%;background:#00e5ff"></div></div><span style="font-size:12px;">68.8</span></div></td></tr><tr class=""><td style="color:#a8ff78;font-size:13px;">◫ Storage Array 16</td><td style="color:var(--muted2)">Storage Array</td><td><span style="color:#ffa502;font-size:11px;font-weight:700;">WARN</span></td><td><div class="tbar-wrap"><div class="tbar"><div class="tbar-fill" style="width:79.7%;background:#ffa502"></div></div><span style="font-size:12px;">79.7</span></div></td><td><div class="tbar-wrap"><div class="tbar"><div class="tbar-fill" style="width:79.7%;background:#ffa502"></div></div><span style="font-size:12px;">79.7</span></div></td><td style="color:var(--text2)">38.8</td><td><div class="tbar-wrap"><div class="tbar"><div class="tbar-fill" style="width:3.4%;background:#00e5ff"></div></div><span style="font-size:12px;">3.4</span></div></td><td><div class="tbar-wrap"><div class="tbar"><div class="tbar-fill" style="width:81.9%;background:#ffa502"></div></div><span style="font-size:12px;">81.9</span></div></td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- CAPACITY TAB -->
+    <div class="tab-content" id="tab-capacity">
+      <div class="cap-section">
+        <div class="cap-section-title">INFRASTRUCTURE TOTALS</div>
+        <div id="cap-stats"><div class="stat-card"><div class="stat-label">TOTAL COMPUTE</div><div class="stat-val" style="color:#00e5ff">808 vCPUs</div><div class="stat-sub">1939 GHz</div></div><div class="stat-card"><div class="stat-label">TOTAL MEMORY</div><div class="stat-val" style="color:#a8ff78">2112 GB</div><div class="stat-sub">2.1 TB</div></div><div class="stat-card"><div class="stat-label">POWER CAP</div><div class="stat-val" style="color:#fd79a8">90 kW</div><div class="stat-sub">Baseline</div></div><div class="stat-card"><div class="stat-label">COOLING</div><div class="stat-val" style="color:#74b9ff">3</div><div class="stat-sub">Active units</div></div><div class="stat-card"><div class="stat-label">UPS</div><div class="stat-val" style="color:#f7d060">2 units</div><div class="stat-sub">Redundancy</div></div><div class="stat-card"><div class="stat-label">DENSITY</div><div class="stat-val" style="color:#ff6b35">17%</div><div class="stat-sub">16/96 cells</div></div></div>
+        <div class="chart-label">POWER BY UNIT (kW)</div>
+        <canvas id="chart-pwr" class="bar-chart" style="margin-bottom:14px;" width="1492"></canvas>
+        <div class="chart-label">CPU UTILIZATION BY UNIT (%)</div>
+        <canvas id="chart-cpu" class="bar-chart" width="1492"></canvas>
+      </div>
+      <div class="cap-section">
+        <div class="cap-section-title">RISK ASSESSMENT</div>
+        <div id="risk-list"><div class="risk-row pass" style="background: rgba(46, 213, 115, 0.03); border: 1px solid rgba(46, 213, 115, 0.2); opacity: 0.45; border-radius: 4px;"><span style="color:#2ed573;flex-shrink:0;font-size:16px;">✓</span><div><div class="risk-msg">Insufficient cooling</div></div></div><div class="risk-row pass" style="background: rgba(46, 213, 115, 0.03); border: 1px solid rgba(46, 213, 115, 0.2); opacity: 0.45; border-radius: 4px;"><span style="color:#2ed573;flex-shrink:0;font-size:16px;">✓</span><div><div class="risk-msg">No UPS deployed</div></div></div><div class="risk-row pass" style="background: rgba(46, 213, 115, 0.03); border: 1px solid rgba(46, 213, 115, 0.2); opacity: 0.45; border-radius: 4px;"><span style="color:#2ed573;flex-shrink:0;font-size:16px;">✓</span><div><div class="risk-msg">0 unit(s) critical</div></div></div><div class="risk-row pass" style="background: rgba(46, 213, 115, 0.03); border: 1px solid rgba(46, 213, 115, 0.2); opacity: 0.45; border-radius: 4px;"><span style="color:#2ed573;flex-shrink:0;font-size:16px;">✓</span><div><div class="risk-msg">Floor density &gt;60%</div></div></div><div class="risk-row pass" style="background: rgba(46, 213, 115, 0.03); border: 1px solid rgba(46, 213, 115, 0.2); opacity: 0.45; border-radius: 4px;"><span style="color:#2ed573;flex-shrink:0;font-size:16px;">✓</span><div><div class="risk-msg">Single network switch</div></div></div></div>
+      </div>
+    </div>
+
+    <!-- SETUPS TAB -->
+    <div class="tab-content" id="tab-setups">
+      <div id="setup-grid"><div class="setup-card trad">
+      <div class="setup-name" style="color:#ff6b35">Traditional HPC Stack</div>
+      <div class="setup-sub">Spark/Ray-style centralized scheduler. GPU-heavy with high raw throughput. Non-deterministic, thermally reactive. Severe tail latency under load.</div>
+      <div class="setup-pills"><span class="pill" style="background:#ff6b3520;border-color:#ff6b3555;color:#ff6b35">Spark/Ray</span><span class="pill" style="background:#fd79a820;border-color:#fd79a855;color:#fd79a8">GPU-Heavy</span><span class="pill" style="background:#ff475720;border-color:#ff475755;color:#ff4757">Non-Deterministic</span><span class="pill" style="background:#ffa50220;border-color:#ffa50255;color:#ffa502">High Power</span></div>
+      <div class="setup-mini-stats"><div><div class="mini-stat-lbl">THROUGHPUT</div><div class="mini-stat-val" style="color:#ff6b35">18,400<span style="font-size:9px;color:var(--muted);margin-left:3px;">ops/s</span></div></div><div><div class="mini-stat-lbl">POWER</div><div class="mini-stat-val" style="color:#ff6b35">285<span style="font-size:9px;color:var(--muted);margin-left:3px;">kW</span></div></div><div><div class="mini-stat-lbl">P99 LAT</div><div class="mini-stat-val" style="color:#ff6b35">890<span style="font-size:9px;color:var(--muted);margin-left:3px;">ms</span></div></div></div>
+      <button class="load-btn" style="color:#ff6b35;border-color:#ff6b3555;background:#ff6b3512;">▶ LOAD THIS SETUP</button></div><div class="setup-card gpu-inf">
+      <div class="setup-name" style="color:#fd79a8">GPU Inference Cluster</div>
+      <div class="setup-sub">Maximum GPU density for ML inference. Highest raw throughput but extreme power draw and unpredictable latency under thermal throttling.</div>
+      <div class="setup-pills"><span class="pill" style="background:#fd79a820;border-color:#fd79a855;color:#fd79a8">GPU Inference</span><span class="pill" style="background:#a855f720;border-color:#a855f755;color:#a855f7">Max Throughput</span><span class="pill" style="background:#ff475720;border-color:#ff475755;color:#ff4757">Non-Deterministic</span><span class="pill" style="background:#ffa50220;border-color:#ffa50255;color:#ffa502">480kW Draw</span></div>
+      <div class="setup-mini-stats"><div><div class="mini-stat-lbl">THROUGHPUT</div><div class="mini-stat-val" style="color:#fd79a8">31,200<span style="font-size:9px;color:var(--muted);margin-left:3px;">ops/s</span></div></div><div><div class="mini-stat-lbl">POWER</div><div class="mini-stat-val" style="color:#fd79a8">480<span style="font-size:9px;color:var(--muted);margin-left:3px;">kW</span></div></div><div><div class="mini-stat-lbl">P99 LAT</div><div class="mini-stat-val" style="color:#fd79a8">1,840<span style="font-size:9px;color:var(--muted);margin-left:3px;">ms</span></div></div></div>
+      <button class="load-btn" style="color:#fd79a8;border-color:#fd79a855;background:#fd79a812;">▶ LOAD THIS SETUP</button></div><div class="setup-card hybrid">
+      <div class="setup-name" style="color:#f7d060">Hybrid Cloud (Mixed)</div>
+      <div class="setup-sub">Balanced mix of compute types for diverse workloads. Good flexibility and moderate efficiency. Moderate latency but still lacks determinism.</div>
+      <div class="setup-pills"><span class="pill" style="background:#f7d06020;border-color:#f7d06055;color:#f7d060">Balanced Mix</span><span class="pill" style="background:#74b9ff20;border-color:#74b9ff55;color:#74b9ff">Flexible</span><span class="pill" style="background:#ff475720;border-color:#ff475755;color:#ff4757">Non-Deterministic</span><span class="pill" style="background:#a8ff7820;border-color:#a8ff7855;color:#a8ff78">Moderate PUE</span></div>
+      <div class="setup-mini-stats"><div><div class="mini-stat-lbl">THROUGHPUT</div><div class="mini-stat-val" style="color:#f7d060">14,800<span style="font-size:9px;color:var(--muted);margin-left:3px;">ops/s</span></div></div><div><div class="mini-stat-lbl">POWER</div><div class="mini-stat-val" style="color:#f7d060">210<span style="font-size:9px;color:var(--muted);margin-left:3px;">kW</span></div></div><div><div class="mini-stat-lbl">P99 LAT</div><div class="mini-stat-val" style="color:#f7d060">430<span style="font-size:9px;color:var(--muted);margin-left:3px;">ms</span></div></div></div>
+      <button class="load-btn" style="color:#f7d060;border-color:#f7d06055;background:#f7d06012;">▶ LOAD THIS SETUP</button></div><div class="setup-card cdx active-setup" style="border-color: rgba(57, 255, 154, 0.4);"><div class="active-badge">● ACTIVE</div>
+      <div class="setup-name" style="color:#39ff9a">CDX v2 / PLEX Runtime™</div>
+      <div class="setup-sub">Coherent Data eXecution v2. CPU-first, thermally-aware, deterministic pulsed execution. Hybrid BM25+Dense search. Flat tail latency. Lowest power and water usage.</div>
+      <div class="setup-pills"><span class="pill" style="background:#39ff9a20;border-color:#39ff9a55;color:#39ff9a">CDX v2</span><span class="pill" style="background:#2ed57320;border-color:#2ed57355;color:#2ed573">Deterministic</span><span class="pill" style="background:#00e5ff20;border-color:#00e5ff55;color:#00e5ff">CPU-First</span><span class="pill" style="background:#74b9ff20;border-color:#74b9ff55;color:#74b9ff">Thermal-Aware</span><span class="pill" style="background:#a8ff7820;border-color:#a8ff7855;color:#a8ff78">Explainable</span></div>
+      <div class="setup-mini-stats"><div><div class="mini-stat-lbl">THROUGHPUT</div><div class="mini-stat-val" style="color:#39ff9a">12,600<span style="font-size:9px;color:var(--muted);margin-left:3px;">ops/s</span></div></div><div><div class="mini-stat-lbl">POWER</div><div class="mini-stat-val" style="color:#39ff9a">142<span style="font-size:9px;color:var(--muted);margin-left:3px;">kW</span></div></div><div><div class="mini-stat-lbl">P99 LAT</div><div class="mini-stat-val" style="color:#39ff9a">8<span style="font-size:9px;color:var(--muted);margin-left:3px;">ms</span></div></div></div>
+      <button class="load-btn" style="color:#39ff9a;border-color:#39ff9a55;background:#39ff9a12;">● CURRENTLY LOADED</button></div><div class="setup-card scmp">
+      <div class="setup-name" style="color:#b48eff">SCMP Decentralized</div>
+      <div class="setup-sub">No cloud. No central server. IPFS-native peer-to-peer storage. AES-256 encrypted, auto-sharded to 256KB. Capability tokens (HMAC-SHA256) enforce who sees what, how many times, for how long. Immutable audit ledger on IPFS. You own your data.</div>
+      <div class="setup-pills"><span class="pill" style="background:#b48eff20;border-color:#b48eff55;color:#b48eff">IPFS / Helia</span><span class="pill" style="background:#00e5ff20;border-color:#00e5ff55;color:#00e5ff">AES-256</span><span class="pill" style="background:#a8ff7820;border-color:#a8ff7855;color:#a8ff78">Sharded</span><span class="pill" style="background:#f7d06020;border-color:#f7d06055;color:#f7d060">Cap Tokens</span><span class="pill" style="background:#fd79a820;border-color:#fd79a855;color:#fd79a8">Zero-Trust</span><span class="pill" style="background:#39ff9a20;border-color:#39ff9a55;color:#39ff9a">Audit Ledger</span></div>
+      <div class="setup-mini-stats"><div><div class="mini-stat-lbl">THROUGHPUT</div><div class="mini-stat-val" style="color:#b48eff">8,200<span style="font-size:9px;color:var(--muted);margin-left:3px;">ops/s</span></div></div><div><div class="mini-stat-lbl">POWER</div><div class="mini-stat-val" style="color:#b48eff">38<span style="font-size:9px;color:var(--muted);margin-left:3px;">kW</span></div></div><div><div class="mini-stat-lbl">P99 LAT</div><div class="mini-stat-val" style="color:#b48eff">320<span style="font-size:9px;color:var(--muted);margin-left:3px;">ms</span></div></div></div>
+      <button class="load-btn" style="color:#b48eff;border-color:#b48eff55;background:#b48eff12;">▶ LOAD THIS SETUP</button></div></div>
+      <div id="plex-detail" style="display: block;"><div class="plex-section">
+    <div class="plex-title">
+      <div class="pulse-anim"><div class="pulse-bar" style="animation-delay:0s"></div><div class="pulse-bar" style="animation-delay:0.15s"></div><div class="pulse-bar" style="animation-delay:0.3s"></div><div class="pulse-bar" style="animation-delay:0.44999999999999996s"></div><div class="pulse-bar" style="animation-delay:0.6s"></div></div>
+      PLEX RUNTIME™ — CDX v2 LIVE ENGINE STATUS
+    </div>
+    <div class="g3" style="margin-bottom:12px;">
+      <div style="background:#091510;border:1px solid #39ff9a22;border-radius:4px;padding:12px;"><div style="font-size:10px;color:#39ff9a;letter-spacing:1px;margin-bottom:5px;">PULSE TIMING</div><div style="font-family:'Orbitron',sans-serif;font-size:18px;color:#fff;font-weight:700;">0.93<span style="font-size:10px;color:var(--muted);margin-left:3px;">ms</span></div><div style="font-size:10px;color:var(--muted);margin-top:3px;">bounded · deterministic</div></div>
+      <div style="background:#091510;border:1px solid #39ff9a22;border-radius:4px;padding:12px;"><div style="font-size:10px;color:#39ff9a;letter-spacing:1px;margin-bottom:5px;">EU BATCH SIZE</div><div style="font-family:'Orbitron',sans-serif;font-size:18px;color:#fff;font-weight:700;">553<span style="font-size:10px;color:var(--muted);margin-left:3px;">units</span></div><div style="font-size:10px;color:var(--muted);margin-top:3px;">exhaustive · idempotent</div></div>
+      <div style="background:#091510;border:1px solid #39ff9a22;border-radius:4px;padding:12px;"><div style="font-size:10px;color:#39ff9a;letter-spacing:1px;margin-bottom:5px;">THERMAL DEBT</div><div style="font-family:'Orbitron',sans-serif;font-size:18px;color:#fff;font-weight:700;">0.85<span style="font-size:10px;color:var(--muted);margin-left:3px;">°C</span></div><div style="font-size:10px;color:var(--muted);margin-top:3px;">predictive avoidance</div></div>
+    </div>
+    <div style="font-size:10px;color:#39ff9a;letter-spacing:2px;margin-bottom:8px;">HYBRID SEARCH ENGINE — BM25 SPARSE + DENSE EMBEDDING FUSION</div>
+    <div class="g3" style="margin-bottom:12px;">
+      <div class="pipe-stage"><div class="pipe-stage-title">SPARSE (BM25)</div><div class="pipe-stage-val">2.3580</div><div class="pipe-stage-sub">k1=1.2 · b=0.75</div><div style="height:3px;background:#39ff9a22;border-radius:2px;margin-top:6px;"><div style="height:100%;width:79%;background:#39ff9a;border-radius:2px;"></div></div></div>
+      <div class="pipe-stage"><div class="pipe-stage-title">DENSE (cosine)</div><div class="pipe-stage-val">0.9350</div><div class="pipe-stage-sub">dim=384 · normalized</div><div style="height:3px;background:#00e5ff22;border-radius:2px;margin-top:6px;"><div style="height:100%;width:94%;background:#00e5ff;border-radius:2px;"></div></div></div>
+      <div class="pipe-stage" style="border-color:#f7d06044;"><div class="pipe-stage-title" style="color:#f7d060;">FUSED SCORE</div><div class="pipe-stage-val" style="color:#f7d060;">0.7627</div><div class="pipe-stage-sub">α=0.7 adaptive</div><div style="height:3px;background:#f7d06022;border-radius:2px;margin-top:6px;"><div style="height:100%;width:76%;background:#f7d060;border-radius:2px;"></div></div></div>
+    </div>
+    <div style="font-size:10px;color:#39ff9a;letter-spacing:2px;margin-bottom:8px;">EXECUTION UNIT PIPELINE (CDX v2)</div>
+    <div class="eu-flow">
+      
+        <span class="eu-box" style="background:#39ff9a18;border-color:#39ff9a55;color:#39ff9a">INTENT ROUTER</span><span style="color:var(--muted);font-size:12px;">→</span>
+        <span class="eu-box" style="background:#00e5ff18;border-color:#00e5ff55;color:#00e5ff">LOCAL ORCH</span><span style="color:var(--muted);font-size:12px;">→</span>
+        <span class="eu-box" style="background:#74b9ff18;border-color:#74b9ff55;color:#74b9ff">PULSE LAYER</span><span style="color:var(--muted);font-size:12px;">→</span>
+        <span class="eu-box" style="background:#a8ff7818;border-color:#a8ff7855;color:#a8ff78">EU EXECUTE</span><span style="color:var(--muted);font-size:12px;">→</span>
+        <span class="eu-box" style="background:#f7d06018;border-color:#f7d06055;color:#f7d060">REASON RECORD</span>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:10px;">
+      <div style="background:#091510;border:1px solid #39ff9a1a;border-radius:3px;padding:8px;"><div style="font-size:10px;color:#39ff9a;letter-spacing:1px;">G1 DETERMINISM</div><div style="font-size:11px;color:var(--muted2);margin-top:3px;">✓ Identical inputs → identical outputs</div></div><div style="background:#091510;border:1px solid #39ff9a1a;border-radius:3px;padding:8px;"><div style="font-size:10px;color:#39ff9a;letter-spacing:1px;">G2 EXHAUSTIVE</div><div style="font-size:11px;color:var(--muted2);margin-top:3px;">✓ Each input processed exactly once</div></div><div style="background:#091510;border:1px solid #39ff9a1a;border-radius:3px;padding:8px;"><div style="font-size:10px;color:#39ff9a;letter-spacing:1px;">G3 BOUNDED</div><div style="font-size:11px;color:var(--muted2);margin-top:3px;">✓ CPU/mem/thermal capped always</div></div><div style="background:#091510;border:1px solid #39ff9a1a;border-radius:3px;padding:8px;"><div style="font-size:10px;color:#39ff9a;letter-spacing:1px;">G4 LINEAR COST</div><div style="font-size:11px;color:var(--muted2);margin-top:3px;">✓ Cost ∝ input size linearly</div></div><div style="background:#091510;border:1px solid #39ff9a1a;border-radius:3px;padding:8px;"><div style="font-size:10px;color:#39ff9a;letter-spacing:1px;">G5 REPLAYABLE</div><div style="font-size:11px;color:var(--muted2);margin-top:3px;">✓ Any execution deterministically replayable</div></div><div style="background:#091510;border:1px solid #39ff9a1a;border-radius:3px;padding:8px;"><div style="font-size:10px;color:#39ff9a;letter-spacing:1px;">G6 EXPLAINABLE</div><div style="font-size:11px;color:var(--muted2);margin-top:3px;">✓ Every decision emits reason record</div></div>
+    </div>
+  </div></div>
+      <div id="scmp-detail" style="display: none;"><div class="scmp-section">
+    <div class="scmp-title">
+      <span style="font-size:18px">◈</span>
+      SCMP DECENTRALIZED — LIVE NODE STATUS
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:12px;">
+      
+        <div style="background:#090814;border:1px solid #b48eff22;border-radius:4px;padding:10px;">
+          <div style="font-size:10px;color:#b48eff;letter-spacing:1px;margin-bottom:4px;">IPFS NODES</div>
+          <div style="font-family:'Orbitron',sans-serif;font-size:20px;color:#fff;font-weight:700;">◈ 8</div>
+          <div style="font-size:10px;color:var(--muted);margin-top:3px;">Helia · libp2p TCP</div>
+        </div>
+        <div style="background:#090814;border:1px solid #00e5ff22;border-radius:4px;padding:10px;">
+          <div style="font-size:10px;color:#00e5ff;letter-spacing:1px;margin-bottom:4px;">TOTAL CIDs</div>
+          <div style="font-family:'Orbitron',sans-serif;font-size:20px;color:#fff;font-weight:700;">⬡ 121</div>
+          <div style="font-size:10px;color:var(--muted);margin-top:3px;">Content-addressed</div>
+        </div>
+        <div style="background:#090814;border:1px solid #f7d06022;border-radius:4px;padding:10px;">
+          <div style="font-size:10px;color:#f7d060;letter-spacing:1px;margin-bottom:4px;">ACTIVE POLICIES</div>
+          <div style="font-family:'Orbitron',sans-serif;font-size:20px;color:#fff;font-weight:700;">🔑 14</div>
+          <div style="font-size:10px;color:var(--muted);margin-top:3px;">Capability tokens</div>
+        </div>
+        <div style="background:#090814;border:1px solid #39ff9a22;border-radius:4px;padding:10px;">
+          <div style="font-size:10px;color:#39ff9a;letter-spacing:1px;margin-bottom:4px;">LEDGER ENTRIES</div>
+          <div style="font-family:'Orbitron',sans-serif;font-size:20px;color:#fff;font-weight:700;">📋 227</div>
+          <div style="font-size:10px;color:var(--muted);margin-top:3px;">Append-only IPFS</div>
+        </div>
+    </div>
+    <div style="font-size:10px;color:#b48eff;letter-spacing:2px;margin-bottom:8px;">DATA PIPELINE — DataEncryption → ShardManager → IPFSStorage</div>
+    <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-bottom:12px;">
+      
+        <div style="background:#b48eff15;border:1px solid #b48eff44;border-radius:3px;padding:5px 10px;text-align:center;">
+          <div style="font-size:10px;color:#b48eff;letter-spacing:.5px;">APPLICATION DATA</div>
+          
+        </div><span style="color:var(--muted);font-size:12px;">→</span>
+        <div style="background:#00e5ff15;border:1px solid #00e5ff44;border-radius:3px;padding:5px 10px;text-align:center;">
+          <div style="font-size:10px;color:#00e5ff;letter-spacing:.5px;">AES-256 ENCRYPT</div>
+          <div style="font-size:9px;color:var(--muted);margin-top:2px;">3.0ms</div>
+        </div><span style="color:var(--muted);font-size:12px;">→</span>
+        <div style="background:#a8ff7815;border:1px solid #a8ff7844;border-radius:3px;padding:5px 10px;text-align:center;">
+          <div style="font-size:10px;color:#a8ff78;letter-spacing:.5px;">256KB SHARD</div>
+          <div style="font-size:9px;color:var(--muted);margin-top:2px;">159ms/shard</div>
+        </div><span style="color:var(--muted);font-size:12px;">→</span>
+        <div style="background:#f7d06015;border:1px solid #f7d06044;border-radius:3px;padding:5px 10px;text-align:center;">
+          <div style="font-size:10px;color:#f7d060;letter-spacing:.5px;">SHA-256 HASH</div>
+          <div style="font-size:9px;color:var(--muted);margin-top:2px;">per shard</div>
+        </div><span style="color:var(--muted);font-size:12px;">→</span>
+        <div style="background:#39ff9a15;border:1px solid #39ff9a44;border-radius:3px;padding:5px 10px;text-align:center;">
+          <div style="font-size:10px;color:#39ff9a;letter-spacing:.5px;">IPFS ADD (CID)</div>
+          <div style="font-size:9px;color:var(--muted);margin-top:2px;">content-addr</div>
+        </div><span style="color:var(--muted);font-size:12px;">→</span>
+        <div style="background:#fd79a815;border:1px solid #fd79a844;border-radius:3px;padding:5px 10px;text-align:center;">
+          <div style="font-size:10px;color:#fd79a8;letter-spacing:.5px;">METADATA CID</div>
+          <div style="font-size:9px;color:var(--muted);margin-top:2px;">index entry</div>
+        </div>
+    </div>
+    <div style="font-size:10px;color:#f7d060;letter-spacing:2px;margin-bottom:8px;">ACCESS CONTROL — AccessPolicy → CapabilityToken → AccessLedger</div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px;">
+      <div style="background:#090814;border:1px solid #f7d06033;border-radius:4px;padding:10px;">
+        <div style="font-size:10px;color:#f7d060;letter-spacing:1px;margin-bottom:6px;">CAPABILITY TOKEN</div>
+        <div style="font-size:12px;color:var(--muted2);line-height:1.8;">
+          Sign algo: <span style="color:#f7d060;">HMAC-SHA256</span><br>
+          Key derive: <span style="color:#f7d060;">HMAC(policy+master)</span><br>
+          Verify: <span style="color:#39ff9a;">0.86ms</span><br>
+          Forgeable: <span style="color:#ff4757;">NO ✗</span>
         </div>
       </div>
-      <div id="detail-panel" style="display:none;"></div>
-    </div>
-
-    <div id="tab-setups" class="tab-content">
-      <div style="font-size:8px;color:#ffffff;letter-spacing:2px;">SELECT A PRE-BUILT CONFIGURATION — LOADS FLOOR LAYOUT AND BENCHMARKS</div>
-      <div class="setup-grid" id="setup-grid"></div>
-      <div id="plex-detail" style="display:none;"></div>
-      <div id="scmp-detail" style="display:none;"></div>
-    </div>
-
-    <div id="tab-compare" class="tab-content">
-      <div style="font-size:8px;color:#ffffff;letter-spacing:2px;">SIDE-BY-SIDE BENCHMARK COMPARISON — ALL FIVE ARCHITECTURES</div>
-      <div id="compare-table"></div>
-      <div class="g2" id="compare-charts"></div>
-    </div>
-
-    <div id="tab-config" class="tab-content" style="flex-direction:row;gap:10px;">
-      <div id="config-list"></div>
-      <div id="config-panel"><div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:10px;color:#ffffff;letter-spacing:2px;">← SELECT A UNIT</div></div>
-    </div>
-
-    <div id="tab-events" class="tab-content">
-      <div style="display:flex;justify-content:space-between;align-items:center;">
-        <div style="font-size:8px;color:#ffffff;letter-spacing:2px;" id="ev-count">EVENT LOG</div>
-        <button id="btn-clear" style="font-size:7px;color:var(--red);background:transparent;border:1px solid #ff475744;padding:2px 8px;border-radius:2px;cursor:pointer;font-family:'Share Tech Mono',monospace;letter-spacing:1px;">CLEAR</button>
+      <div style="background:#090814;border:1px solid #b48eff33;border-radius:4px;padding:10px;">
+        <div style="font-size:10px;color:#b48eff;letter-spacing:1px;margin-bottom:6px;">POLICY ENGINE</div>
+        <div style="font-size:12px;color:var(--muted2);line-height:1.8;">
+          Time limit: <span style="color:#b48eff;">expiresAt check</span><br>
+          View limit: <span style="color:#b48eff;">maxViews counter</span><br>
+          Revocation: <span style="color:#b48eff;">instant</span><br>
+          Permissions: <span style="color:#b48eff;">read/write/delete</span>
+        </div>
       </div>
-      <div id="event-list" style="display:flex;flex-direction:column;"></div>
+      <div style="background:#090814;border:1px solid #39ff9a33;border-radius:4px;padding:10px;">
+        <div style="font-size:10px;color:#39ff9a;letter-spacing:1px;margin-bottom:6px;">AUDIT LEDGER (IPFS)</div>
+        <div style="font-size:12px;color:var(--muted2);line-height:1.8;">
+          Type: <span style="color:#39ff9a;">append-only chain</span><br>
+          Entries: <span style="color:#39ff9a;">227</span><br>
+          Mutable: <span style="color:#ff4757;">NO ✗</span><br>
+          Types: <span style="color:#39ff9a;">GRANT/VIEW/REVOKE</span>
+        </div>
+      </div>
+    </div>
+    <div style="font-size:10px;color:#00e5ff;letter-spacing:2px;margin-bottom:8px;">IPFS NODE CLUSTER — Helia · MemoryBlockstore · libp2p</div>
+    <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px;">
+      <div style="background:#090814;border:1px solid #b48eff33;border-radius:3px;padding:7px 10px;min-width:130px;">
+          <div style="font-size:11px;color:#b48eff;margin-bottom:3px;">◈ Storage Array 1</div>
+          <div style="font-size:11px;color:var(--muted);">CIDs: <span style="color:#00e5ff">15</span> · [2,1]</div>
+          <div class="shard-track"><div class="shard-fill" style="width:75%"></div></div>
+          <div style="font-size:10px;color:#ffa502;margin-top:3px;">2.6kW · ok</div>
+        </div><div style="background:#090814;border:1px solid #b48eff33;border-radius:3px;padding:7px 10px;min-width:130px;">
+          <div style="font-size:11px;color:#b48eff;margin-bottom:3px;">◈ Storage Array 2</div>
+          <div style="font-size:11px;color:var(--muted);">CIDs: <span style="color:#00e5ff">17</span> · [4,1]</div>
+          <div class="shard-track"><div class="shard-fill" style="width:85%"></div></div>
+          <div style="font-size:10px;color:#ffa502;margin-top:3px;">2.6kW · ok</div>
+        </div><div style="background:#090814;border:1px solid #b48eff33;border-radius:3px;padding:7px 10px;min-width:130px;">
+          <div style="font-size:11px;color:#b48eff;margin-bottom:3px;">◈ Storage Array 3</div>
+          <div style="font-size:11px;color:var(--muted);">CIDs: <span style="color:#00e5ff">15</span> · [6,1]</div>
+          <div class="shard-track"><div class="shard-fill" style="width:75%"></div></div>
+          <div style="font-size:10px;color:#ffa502;margin-top:3px;">2.6kW · ok</div>
+        </div><div style="background:#090814;border:1px solid #b48eff33;border-radius:3px;padding:7px 10px;min-width:130px;">
+          <div style="font-size:11px;color:#b48eff;margin-bottom:3px;">◈ Storage Array 4</div>
+          <div style="font-size:11px;color:var(--muted);">CIDs: <span style="color:#00e5ff">16</span> · [8,1]</div>
+          <div class="shard-track"><div class="shard-fill" style="width:80%"></div></div>
+          <div style="font-size:10px;color:#ffa502;margin-top:3px;">2.6kW · ok</div>
+        </div><div style="background:#090814;border:1px solid #b48eff33;border-radius:3px;padding:7px 10px;min-width:130px;">
+          <div style="font-size:11px;color:#b48eff;margin-bottom:3px;">◈ Storage Array 5</div>
+          <div style="font-size:11px;color:var(--muted);">CIDs: <span style="color:#00e5ff">15</span> · [10,1]</div>
+          <div class="shard-track"><div class="shard-fill" style="width:75%"></div></div>
+          <div style="font-size:10px;color:#ffa502;margin-top:3px;">2.6kW · ok</div>
+        </div><div style="background:#090814;border:1px solid #b48eff33;border-radius:3px;padding:7px 10px;min-width:130px;">
+          <div style="font-size:11px;color:#b48eff;margin-bottom:3px;">◈ Storage Array 13</div>
+          <div style="font-size:11px;color:var(--muted);">CIDs: <span style="color:#00e5ff">15</span> · [1,7]</div>
+          <div class="shard-track"><div class="shard-fill" style="width:75%"></div></div>
+          <div style="font-size:10px;color:#ffa502;margin-top:3px;">2.6kW · ok</div>
+        </div><div style="background:#090814;border:1px solid #b48eff33;border-radius:3px;padding:7px 10px;min-width:130px;">
+          <div style="font-size:11px;color:#b48eff;margin-bottom:3px;">◈ Storage Array 14</div>
+          <div style="font-size:11px;color:var(--muted);">CIDs: <span style="color:#00e5ff">18</span> · [5,7]</div>
+          <div class="shard-track"><div class="shard-fill" style="width:90%"></div></div>
+          <div style="font-size:10px;color:#ffa502;margin-top:3px;">2.6kW · ok</div>
+        </div><div style="background:#090814;border:1px solid #b48eff33;border-radius:3px;padding:7px 10px;min-width:130px;">
+          <div style="font-size:11px;color:#b48eff;margin-bottom:3px;">◈ Storage Array 15</div>
+          <div style="font-size:11px;color:var(--muted);">CIDs: <span style="color:#00e5ff">16</span> · [9,7]</div>
+          <div class="shard-track"><div class="shard-fill" style="width:80%"></div></div>
+          <div style="font-size:10px;color:#ffa502;margin-top:3px;">2.6kW · ok</div>
+        </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+      <div style="background:#090814;border:1px solid #00e5ff22;border-radius:4px;padding:12px;">
+        <div style="font-size:10px;color:#00e5ff;letter-spacing:1px;margin-bottom:8px;">OPERATION TIMING</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid #1a2a3a;">
+          <span style="font-size:12px;color:var(--muted2);">store() write</span>
+          <span style="font-size:12px;color:#a8ff78;">159ms/shard</span>
+        </div><div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid #1a2a3a;">
+          <span style="font-size:12px;color:var(--muted2);">get() read</span>
+          <span style="font-size:12px;color:#00e5ff;">3–320 ms</span>
+        </div><div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid #1a2a3a;">
+          <span style="font-size:12px;color:var(--muted2);">shareData()</span>
+          <span style="font-size:12px;color:#f7d060;">~141ms</span>
+        </div><div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid #1a2a3a;">
+          <span style="font-size:12px;color:var(--muted2);">revokeAccess()</span>
+          <span style="font-size:12px;color:#fd79a8;">~96ms</span>
+        </div><div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid #1a2a3a;">
+          <span style="font-size:12px;color:var(--muted2);">getAuditTrail()</span>
+          <span style="font-size:12px;color:#39ff9a;">&lt;1ms/1k</span>
+        </div>
+      </div>
+      <div style="background:#090814;border:1px solid #b48eff22;border-radius:4px;padding:12px;">
+        <div style="font-size:10px;color:#b48eff;letter-spacing:1px;margin-bottom:8px;">NETWORK / PEER INFO</div>
+        <div style="font-size:12px;color:var(--muted2);line-height:2;">
+          Peer ID: <span style="color:#b48eff;font-size:10px;">12D3KooW76XSWG3CKN4…</span><br>
+          Transport: <span style="color:#00e5ff;">libp2p TCP + Yamux</span><br>
+          Encryption: <span style="color:#00e5ff;">Noise protocol</span><br>
+          Cache hit rate: <span style="color:#39ff9a;">87%</span><br>
+          Shard integrity: <span style="color:#39ff9a;">SHA-256 verified ✓</span><br>
+          No central server: <span style="color:#39ff9a;">TRUE ✓</span>
+        </div>
+      </div>
+    </div>
+  </div></div>
     </div>
 
-    <div id="tab-capacity" class="tab-content">
-      <div class="g3" id="cap-stats"></div>
-      <div class="g2">
-        <div class="card"><div class="card-title">POWER CONSUMPTION (kW)</div><canvas id="chart-pwr" height="150"></canvas></div>
-        <div class="card"><div class="card-title">CPU UTILIZATION (%)</div><canvas id="chart-cpu" height="150"></canvas></div>
+    <!-- COMPARE TAB -->
+    <div class="tab-content active" id="tab-compare">
+      <div id="compare-content">
+        <div id="compare-table"><div class="cmp-header-row"><div></div><div class="cmp-col-head" style="background:#ff6b3518;border:1px solid #ff6b3544;color:#ff6b35">Traditional HPC Stack</div><div class="cmp-col-head" style="background:#fd79a818;border:1px solid #fd79a844;color:#fd79a8">GPU Inference Cluster</div><div class="cmp-col-head" style="background:#f7d06018;border:1px solid #f7d06044;color:#f7d060">Hybrid Cloud (Mixed)</div><div class="cmp-col-head" style="background:#39ff9a18;border:1px solid #39ff9a44;color:#39ff9a">CDX v2 / PLEX Runtime™</div><div class="cmp-col-head" style="background:#b48eff18;border:1px solid #b48eff44;color:#b48eff">SCMP Decentralized</div></div><div class="cmp-section-label">THROUGHPUT &amp; LATENCY</div><div class="cmp-row"><div class="cmp-row-label">Throughput (ops/s)</div><div class="cmp-cell"><div class="cmp-val mid">18,400</div></div><div class="cmp-cell"><div class="cmp-val best">31,200</div><div class="win-badge">▲ BEST</div></div><div class="cmp-cell"><div class="cmp-val mid">14,800</div></div><div class="cmp-cell"><div class="cmp-val mid">12,600</div></div><div class="cmp-cell"><div class="cmp-val worst">8,200</div></div></div><div class="cmp-row"><div class="cmp-row-label">P50 Latency (ms)</div><div class="cmp-cell"><div class="cmp-val mid">12</div></div><div class="cmp-cell"><div class="cmp-val mid">8</div></div><div class="cmp-cell"><div class="cmp-val worst">18</div></div><div class="cmp-cell"><div class="cmp-val mid">4</div></div><div class="cmp-cell"><div class="cmp-val best">3</div><div class="win-badge">▲ BEST</div></div></div><div class="cmp-row"><div class="cmp-row-label">P95 Latency (ms)</div><div class="cmp-cell"><div class="cmp-val mid">145</div></div><div class="cmp-cell"><div class="cmp-val worst">220</div></div><div class="cmp-cell"><div class="cmp-val mid">98</div></div><div class="cmp-cell"><div class="cmp-val best">6</div><div class="win-badge">▲ BEST</div></div><div class="cmp-cell"><div class="cmp-val mid">185</div></div></div><div class="cmp-row"><div class="cmp-row-label">P99 Latency (ms)</div><div class="cmp-cell"><div class="cmp-val mid">890</div></div><div class="cmp-cell"><div class="cmp-val worst">1,840</div></div><div class="cmp-cell"><div class="cmp-val mid">430</div></div><div class="cmp-cell"><div class="cmp-val best">8</div><div class="win-badge">▲ BEST</div></div><div class="cmp-cell"><div class="cmp-val mid">320</div></div></div><div class="cmp-section-label">POWER &amp; THERMAL</div><div class="cmp-row"><div class="cmp-row-label">Power Draw (kW)</div><div class="cmp-cell"><div class="cmp-val mid">285</div></div><div class="cmp-cell"><div class="cmp-val worst">480</div></div><div class="cmp-cell"><div class="cmp-val mid">210</div></div><div class="cmp-cell"><div class="cmp-val mid">142</div></div><div class="cmp-cell"><div class="cmp-val best">38</div><div class="win-badge">▲ BEST</div></div></div><div class="cmp-row"><div class="cmp-row-label">PUE</div><div class="cmp-cell"><div class="cmp-val mid">1.85</div></div><div class="cmp-cell"><div class="cmp-val worst">1.95</div></div><div class="cmp-cell"><div class="cmp-val mid">1.72</div></div><div class="cmp-cell"><div class="cmp-val mid">1.18</div></div><div class="cmp-cell"><div class="cmp-val best">1.08</div><div class="win-badge">▲ BEST</div></div></div><div class="cmp-row"><div class="cmp-row-label">Water Usage (L/hr)</div><div class="cmp-cell"><div class="cmp-val mid">420</div></div><div class="cmp-cell"><div class="cmp-val worst">680</div></div><div class="cmp-cell"><div class="cmp-val mid">310</div></div><div class="cmp-cell"><div class="cmp-val mid">95</div></div><div class="cmp-cell"><div class="cmp-val best">28</div><div class="win-badge">▲ BEST</div></div></div><div class="cmp-row"><div class="cmp-row-label">Cooling Overhead</div><div class="cmp-cell"><div class="cmp-val mid">38%</div></div><div class="cmp-cell"><div class="cmp-val worst">52%</div></div><div class="cmp-cell"><div class="cmp-val mid">29%</div></div><div class="cmp-cell"><div class="cmp-val mid">11%</div></div><div class="cmp-cell"><div class="cmp-val best">6%</div><div class="win-badge">▲ BEST</div></div></div><div class="cmp-row"><div class="cmp-row-label">Thermal Strategy</div><div class="cmp-cell"><div class="cmp-val worst">reactive</div></div><div class="cmp-cell"><div class="cmp-val worst">reactive</div></div><div class="cmp-cell"><div class="cmp-val worst">reactive</div></div><div class="cmp-cell"><div class="cmp-val best">predictive</div><div class="win-badge">▲ BEST</div></div><div class="cmp-cell"><div class="cmp-val best">predictive</div><div class="win-badge">▲ BEST</div></div></div><div class="cmp-section-label">GUARANTEES</div><div class="cmp-row"><div class="cmp-row-label">Deterministic</div><div class="cmp-cell"><div class="cmp-val no">NO ✗</div></div><div class="cmp-cell"><div class="cmp-val no">NO ✗</div></div><div class="cmp-cell"><div class="cmp-val no">NO ✗</div></div><div class="cmp-cell"><div class="cmp-val yes">YES ✓</div></div><div class="cmp-cell"><div class="cmp-val yes">YES ✓</div></div></div><div class="cmp-row"><div class="cmp-row-label">Explainable</div><div class="cmp-cell"><div class="cmp-val no">NO ✗</div></div><div class="cmp-cell"><div class="cmp-val no">NO ✗</div></div><div class="cmp-cell"><div class="cmp-val no">NO ✗</div></div><div class="cmp-cell"><div class="cmp-val yes">YES ✓</div></div><div class="cmp-cell"><div class="cmp-val yes">YES ✓</div></div></div><div class="cmp-row"><div class="cmp-row-label">Replayable</div><div class="cmp-cell"><div class="cmp-val partial">PARTIAL</div></div><div class="cmp-cell"><div class="cmp-val no">NO ✗</div></div><div class="cmp-cell"><div class="cmp-val partial">PARTIAL</div></div><div class="cmp-cell"><div class="cmp-val yes">YES ✓</div></div><div class="cmp-cell"><div class="cmp-val yes">YES ✓</div></div></div><div class="cmp-section-label">COST</div><div class="cmp-row"><div class="cmp-row-label">Est. Cost / hr</div><div class="cmp-cell"><div class="cmp-val mid">$38.20</div></div><div class="cmp-cell"><div class="cmp-val worst">$64.50</div></div><div class="cmp-cell"><div class="cmp-val mid">$28.80</div></div><div class="cmp-cell"><div class="cmp-val mid">$19.40</div></div><div class="cmp-cell"><div class="cmp-val best">$8.40</div><div class="win-badge">▲ BEST</div></div></div><div class="cmp-section-label">SECURITY &amp; SOVEREIGNTY</div><div class="cmp-row"><div class="cmp-row-label">Central Server</div><div class="cmp-cell"><div class="cmp-val worst">REQUIRED</div></div><div class="cmp-cell"><div class="cmp-val worst">REQUIRED</div></div><div class="cmp-cell"><div class="cmp-val worst">REQUIRED</div></div><div class="cmp-cell"><div class="cmp-val best">NONE</div><div class="win-badge">▲ BEST</div></div><div class="cmp-cell"><div class="cmp-val best">NONE</div><div class="win-badge">▲ BEST</div></div></div><div class="cmp-row"><div class="cmp-row-label">Encryption at Rest</div><div class="cmp-cell"><div class="cmp-val worst">NONE</div></div><div class="cmp-cell"><div class="cmp-val worst">NONE</div></div><div class="cmp-cell"><div class="cmp-val mid">PARTIAL</div></div><div class="cmp-cell"><div class="cmp-val worst">NONE</div></div><div class="cmp-cell"><div class="cmp-val best">AES-256 ✓</div><div class="win-badge">▲ BEST</div></div></div><div class="cmp-row"><div class="cmp-row-label">Capability Tokens</div><div class="cmp-cell"><div class="cmp-val no">NO ✗</div></div><div class="cmp-cell"><div class="cmp-val no">NO ✗</div></div><div class="cmp-cell"><div class="cmp-val no">NO ✗</div></div><div class="cmp-cell"><div class="cmp-val no">NO ✗</div></div><div class="cmp-cell"><div class="cmp-val yes">YES ✓</div></div></div><div class="cmp-row"><div class="cmp-row-label">Audit Ledger</div><div class="cmp-cell"><div class="cmp-val worst">NONE</div></div><div class="cmp-cell"><div class="cmp-val worst">NONE</div></div><div class="cmp-cell"><div class="cmp-val mid">DB-only</div></div><div class="cmp-cell"><div class="cmp-val worst">NONE</div></div><div class="cmp-cell"><div class="cmp-val best">IPFS immutable</div><div class="win-badge">▲ BEST</div></div></div><div class="cmp-row"><div class="cmp-row-label">Data Sharding</div><div class="cmp-cell"><div class="cmp-val no">NO ✗</div></div><div class="cmp-cell"><div class="cmp-val no">NO ✗</div></div><div class="cmp-cell"><div class="cmp-val no">NO ✗</div></div><div class="cmp-cell"><div class="cmp-val no">NO ✗</div></div><div class="cmp-cell"><div class="cmp-val yes">YES ✓</div></div></div><div class="cmp-row"><div class="cmp-row-label">Instant Revocation</div><div class="cmp-cell"><div class="cmp-val no">NO ✗</div></div><div class="cmp-cell"><div class="cmp-val no">NO ✗</div></div><div class="cmp-cell"><div class="cmp-val no">NO ✗</div></div><div class="cmp-cell"><div class="cmp-val no">NO ✗</div></div><div class="cmp-cell"><div class="cmp-val yes">YES ✓</div></div></div><div class="cmp-row"><div class="cmp-row-label">Zero-Trust Access</div><div class="cmp-cell"><div class="cmp-val no">NO ✗</div></div><div class="cmp-cell"><div class="cmp-val no">NO ✗</div></div><div class="cmp-cell"><div class="cmp-val no">NO ✗</div></div><div class="cmp-cell"><div class="cmp-val no">NO ✗</div></div><div class="cmp-cell"><div class="cmp-val yes">YES ✓</div></div></div><div class="cmp-row"><div class="cmp-row-label">Self-Sovereign</div><div class="cmp-cell"><div class="cmp-val no">NO ✗</div></div><div class="cmp-cell"><div class="cmp-val no">NO ✗</div></div><div class="cmp-cell"><div class="cmp-val no">NO ✗</div></div><div class="cmp-cell"><div class="cmp-val no">NO ✗</div></div><div class="cmp-cell"><div class="cmp-val yes">YES ✓</div></div></div></div>
       </div>
-      <div class="card" id="risk-panel"><div style="font-size:8px;color:var(--yellow);letter-spacing:2px;margin-bottom:8px;">⚠ RISK ASSESSMENT</div><div id="risk-list"></div></div>
+      <div id="compare-charts"><div class="cmp-chart-wrap"><div class="card-title">POWER DRAW COMPARISON (kW) — lower is better</div><div class="bar-compare" id="bar-power"><div class="bar-compare-row"><span class="bar-compare-label">Traditional HPC St</span><div class="bar-compare-track"><div class="bar-compare-fill" style="width:59%;background:#ffa50233;"><span class="bar-compare-text" style="color:#ff6b35">285 kW</span></div></div></div><div class="bar-compare-row"><span class="bar-compare-label">GPU Inference Clus</span><div class="bar-compare-track"><div class="bar-compare-fill" style="width:100%;background:#ff475733;"><span class="bar-compare-text" style="color:#fd79a8">480 kW</span></div></div></div><div class="bar-compare-row"><span class="bar-compare-label">Hybrid Cloud (Mixe</span><div class="bar-compare-track"><div class="bar-compare-fill" style="width:44%;background:#ffa50233;"><span class="bar-compare-text" style="color:#f7d060">210 kW</span></div></div></div><div class="bar-compare-row"><span class="bar-compare-label">CDX v2 / PLEX Runt</span><div class="bar-compare-track"><div class="bar-compare-fill" style="width:30%;background:#ffa50233;"><span class="bar-compare-text" style="color:#39ff9a">142 kW</span></div></div></div><div class="bar-compare-row"><span class="bar-compare-label">SCMP Decentralized</span><div class="bar-compare-track"><div class="bar-compare-fill" style="width:8%;background:#39ff9a33;"><span class="bar-compare-text" style="color:#b48eff">38 kW ← BEST</span></div></div></div></div></div><div class="cmp-chart-wrap"><div class="card-title">LATENCY PROFILE — P50 / P95 / P99 (ms) — lower is better</div><div id="lat-chart"><div style="margin-bottom:10px;"><div style="font-size:11px;font-weight:600;color:#ff6b35;letter-spacing:1px;margin-bottom:4px;">Traditional HPC Stack</div><div class="lat-row"><span class="lat-label">P50</span><div class="lat-track"><div class="lat-fill" style="width:0.6521739130434783%;background:#2ed57388;"></div></div><span style="font-size:11px;color:#2ed573;min-width:65px;flex-shrink:0">12 ms</span></div><div class="lat-row"><span class="lat-label">P95</span><div class="lat-track"><div class="lat-fill" style="width:7.880434782608696%;background:#ffa50288;"></div></div><span style="font-size:11px;color:#ffa502;min-width:65px;flex-shrink:0">145 ms</span></div><div class="lat-row"><span class="lat-label">P99</span><div class="lat-track"><div class="lat-fill" style="width:48.369565217391305%;background:#ff475788;"></div></div><span style="font-size:11px;color:#ff4757;min-width:65px;flex-shrink:0">890 ms</span></div></div><div style="margin-bottom:10px;"><div style="font-size:11px;font-weight:600;color:#fd79a8;letter-spacing:1px;margin-bottom:4px;">GPU Inference Cluster</div><div class="lat-row"><span class="lat-label">P50</span><div class="lat-track"><div class="lat-fill" style="width:0.43478260869565216%;background:#2ed57388;"></div></div><span style="font-size:11px;color:#2ed573;min-width:65px;flex-shrink:0">8 ms</span></div><div class="lat-row"><span class="lat-label">P95</span><div class="lat-track"><div class="lat-fill" style="width:11.956521739130435%;background:#ffa50288;"></div></div><span style="font-size:11px;color:#ffa502;min-width:65px;flex-shrink:0">220 ms</span></div><div class="lat-row"><span class="lat-label">P99</span><div class="lat-track"><div class="lat-fill" style="width:100%;background:#ff475788;"></div></div><span style="font-size:11px;color:#ff4757;min-width:65px;flex-shrink:0">1,840 ms</span></div></div><div style="margin-bottom:10px;"><div style="font-size:11px;font-weight:600;color:#f7d060;letter-spacing:1px;margin-bottom:4px;">Hybrid Cloud (Mixed)</div><div class="lat-row"><span class="lat-label">P50</span><div class="lat-track"><div class="lat-fill" style="width:0.9782608695652175%;background:#2ed57388;"></div></div><span style="font-size:11px;color:#2ed573;min-width:65px;flex-shrink:0">18 ms</span></div><div class="lat-row"><span class="lat-label">P95</span><div class="lat-track"><div class="lat-fill" style="width:5.326086956521739%;background:#ffa50288;"></div></div><span style="font-size:11px;color:#ffa502;min-width:65px;flex-shrink:0">98 ms</span></div><div class="lat-row"><span class="lat-label">P99</span><div class="lat-track"><div class="lat-fill" style="width:23.369565217391305%;background:#ff475788;"></div></div><span style="font-size:11px;color:#ff4757;min-width:65px;flex-shrink:0">430 ms</span></div></div><div style="margin-bottom:10px;"><div style="font-size:11px;font-weight:600;color:#39ff9a;letter-spacing:1px;margin-bottom:4px;">CDX v2 / PLEX Runtime™</div><div class="lat-row"><span class="lat-label">P50</span><div class="lat-track"><div class="lat-fill" style="width:0.21739130434782608%;background:#2ed57388;"></div></div><span style="font-size:11px;color:#2ed573;min-width:65px;flex-shrink:0">4 ms</span></div><div class="lat-row"><span class="lat-label">P95</span><div class="lat-track"><div class="lat-fill" style="width:0.32608695652173914%;background:#ffa50288;"></div></div><span style="font-size:11px;color:#ffa502;min-width:65px;flex-shrink:0">6 ms</span></div><div class="lat-row"><span class="lat-label">P99</span><div class="lat-track"><div class="lat-fill" style="width:0.43478260869565216%;background:#ff475788;"></div></div><span style="font-size:11px;color:#ff4757;min-width:65px;flex-shrink:0">8 ms</span></div></div><div style="margin-bottom:10px;"><div style="font-size:11px;font-weight:600;color:#b48eff;letter-spacing:1px;margin-bottom:4px;">SCMP Decentralized</div><div class="lat-row"><span class="lat-label">P50</span><div class="lat-track"><div class="lat-fill" style="width:0.16304347826086957%;background:#2ed57388;"></div></div><span style="font-size:11px;color:#2ed573;min-width:65px;flex-shrink:0">3 ms</span></div><div class="lat-row"><span class="lat-label">P95</span><div class="lat-track"><div class="lat-fill" style="width:10.054347826086957%;background:#ffa50288;"></div></div><span style="font-size:11px;color:#ffa502;min-width:65px;flex-shrink:0">185 ms</span></div><div class="lat-row"><span class="lat-label">P99</span><div class="lat-track"><div class="lat-fill" style="width:17.391304347826086%;background:#ff475788;"></div></div><span style="font-size:11px;color:#ff4757;min-width:65px;flex-shrink:0">320 ms</span></div></div></div></div></div>
     </div>
-  </div>
-</div>
+
+    <!-- EVENTS TAB -->
+    <div class="tab-content" id="tab-events">
+      <div class="ev-header">
+        <span id="ev-count">EVENT LOG — 80 ENTRIES</span>
+        <button id="btn-clear">✕ CLEAR</button>
+      </div>
+      <div id="event-list"><div class="event-row ev-cdx"><span class="ev-time">1m ago</span><span class="ev-level" style="color:#39ff9a">CDX</span><span class="ev-msg">PLEX pulse complete — thermal debt: 1.30°C · EU batch: deterministic ✓</span></div><div class="event-row ev-cdx"><span class="ev-time">1m ago</span><span class="ev-level" style="color:#39ff9a">CDX</span><span class="ev-msg">PLEX pulse complete — thermal debt: 0.97°C · EU batch: deterministic ✓</span></div><div class="event-row ev-cdx"><span class="ev-time">2m ago</span><span class="ev-level" style="color:#39ff9a">CDX</span><span class="ev-msg">PLEX pulse complete — thermal debt: 1.75°C · EU batch: deterministic ✓</span></div><div class="event-row ev-cdx"><span class="ev-time">2m ago</span><span class="ev-level" style="color:#39ff9a">CDX</span><span class="ev-msg">PLEX pulse complete — thermal debt: 1.42°C · EU batch: deterministic ✓</span></div><div class="event-row ev-cdx"><span class="ev-time">2m ago</span><span class="ev-level" style="color:#39ff9a">CDX</span><span class="ev-msg">PLEX pulse complete — thermal debt: 0.53°C · EU batch: deterministic ✓</span></div><div class="event-row ev-cdx"><span class="ev-time">3m ago</span><span class="ev-level" style="color:#39ff9a">CDX</span><span class="ev-msg">PLEX pulse complete — thermal debt: 0.98°C · EU batch: deterministic ✓</span></div><div class="event-row ev-cdx"><span class="ev-time">3m ago</span><span class="ev-level" style="color:#39ff9a">CDX</span><span class="ev-msg">PLEX pulse complete — thermal debt: 1.84°C · EU batch: deterministic ✓</span></div><div class="event-row ev-cdx"><span class="ev-time">3m ago</span><span class="ev-level" style="color:#39ff9a">CDX</span><span class="ev-msg">PLEX pulse complete — thermal debt: 0.19°C · EU batch: deterministic ✓</span></div><div class="event-row ev-cdx"><span class="ev-time">3m ago</span><span class="ev-level" style="color:#39ff9a">CDX</span><span class="ev-msg">PLEX pulse complete — thermal debt: 0.92°C · EU batch: deterministic ✓</span></div><div class="event-row ev-cdx"><span class="ev-time">3m ago</span><span class="ev-level" style="color:#39ff9a">CDX</span><span class="ev-msg">PLEX pulse complete — thermal debt: 0.04°C · EU batch: deterministic ✓</span></div><div class="event-row ev-cdx"><span class="ev-time">4m ago</span><span class="ev-level" style="color:#39ff9a">CDX</span><span class="ev-msg">PLEX pulse complete — thermal debt: 1.08°C · EU batch: deterministic ✓</span></div><div class="event-row ev-cdx"><span class="ev-time">4m ago</span><span class="ev-level" style="color:#39ff9a">CDX</span><span class="ev-msg">PLEX pulse complete — thermal debt: 0.61°C · EU batch: deterministic ✓</span></div><div class="event-row ev-cdx"><span class="ev-time">4m ago</span><span class="ev-level" style="color:#39ff9a">CDX</span><span class="ev-msg">PLEX pulse complete — thermal debt: 1.45°C · EU batch: deterministic ✓</span></div><div class="event-row ev-cdx"><span class="ev-time">4m ago</span><span class="ev-level" style="color:#39ff9a">CDX</span><span class="ev-msg">BM25 sparse index built · dense embed cache primed · hybrid fusion ready</span></div><div class="event-row ev-cdx"><span class="ev-time">4m ago</span><span class="ev-level" style="color:#39ff9a">CDX</span><span class="ev-msg">PLEX Runtime™ initializing — pulsed execution engine online</span></div><div class="event-row ev-ok"><span class="ev-time">4m ago</span><span class="ev-level" style="color:#2ed573">OK</span><span class="ev-msg">Setup loaded: CDX v2 / PLEX Runtime™</span></div><div class="event-row ev-critical"><span class="ev-time">4m ago</span><span class="ev-level" style="color:#ff4757">CRITICAL</span><span class="ev-msg">Net Switch 10 CPU at 0% — limit approached</span></div><div class="event-row ev-info"><span class="ev-time">4m ago</span><span class="ev-level" style="color:#4a6278">INFO</span><span class="ev-msg">Auto-scale check: 97% utilization</span></div><div class="event-row ev-critical"><span class="ev-time">5m ago</span><span class="ev-level" style="color:#ff4757">CRITICAL</span><span class="ev-msg">Net Switch 10 CPU at 0% — limit approached</span></div><div class="event-row ev-critical"><span class="ev-time">5m ago</span><span class="ev-level" style="color:#ff4757">CRITICAL</span><span class="ev-msg">GPU Cluster 6 CPU at 100% — limit approached</span></div><div class="event-row ev-critical"><span class="ev-time">6m ago</span><span class="ev-level" style="color:#ff4757">CRITICAL</span><span class="ev-msg">Server Rack 3 CPU at 102.6% — limit approached</span></div><div class="event-row ev-critical"><span class="ev-time">6m ago</span><span class="ev-level" style="color:#ff4757">CRITICAL</span><span class="ev-msg">GPU Cluster 9 CPU at 80.9% — limit approached</span></div><div class="event-row ev-critical"><span class="ev-time">6m ago</span><span class="ev-level" style="color:#ff4757">CRITICAL</span><span class="ev-msg">Server Rack 4 CPU at 84.1% — limit approached</span></div><div class="event-row ev-info"><span class="ev-time">6m ago</span><span class="ev-level" style="color:#4a6278">INFO</span><span class="ev-msg">Auto-scale check: 97% utilization</span></div><div class="event-row ev-critical"><span class="ev-time">6m ago</span><span class="ev-level" style="color:#ff4757">CRITICAL</span><span class="ev-msg">Server Rack 2 CPU at 105.9% — limit approached</span></div><div class="event-row ev-info"><span class="ev-time">6m ago</span><span class="ev-level" style="color:#4a6278">INFO</span><span class="ev-msg">Auto-scale check: 97% utilization</span></div><div class="event-row ev-ok"><span class="ev-time">6m ago</span><span class="ev-level" style="color:#2ed573">OK</span><span class="ev-msg">Setup loaded: Traditional HPC Stack</span></div><div class="event-row ev-critical"><span class="ev-time">7m ago</span><span class="ev-level" style="color:#ff4757">CRITICAL</span><span class="ev-msg">GPU Cluster 6 CPU at 102.2% — limit approached</span></div><div class="event-row ev-ok"><span class="ev-time">7m ago</span><span class="ev-level" style="color:#2ed573">OK</span><span class="ev-msg">Setup loaded: GPU Inference Cluster</span></div><div class="event-row ev-critical"><span class="ev-time">7m ago</span><span class="ev-level" style="color:#ff4757">CRITICAL</span><span class="ev-msg">Server Rack 4 CPU at 88.2% — limit approached</span></div><div class="event-row ev-info"><span class="ev-time">7m ago</span><span class="ev-level" style="color:#4a6278">INFO</span><span class="ev-msg">Auto-scale check: 97% utilization</span></div><div class="event-row ev-ok"><span class="ev-time">7m ago</span><span class="ev-level" style="color:#2ed573">OK</span><span class="ev-msg">Setup loaded: Hybrid Cloud (Mixed)</span></div><div class="event-row ev-cdx"><span class="ev-time">7m ago</span><span class="ev-level" style="color:#39ff9a">CDX</span><span class="ev-msg">BM25 sparse index built · dense embed cache primed · hybrid fusion ready</span></div><div class="event-row ev-cdx"><span class="ev-time">7m ago</span><span class="ev-level" style="color:#39ff9a">CDX</span><span class="ev-msg">PLEX Runtime™ initializing — pulsed execution engine online</span></div><div class="event-row ev-ok"><span class="ev-time">7m ago</span><span class="ev-level" style="color:#2ed573">OK</span><span class="ev-msg">Setup loaded: CDX v2 / PLEX Runtime™</span></div><div class="event-row ev-scmp"><span class="ev-time">7m ago</span><span class="ev-level" style="color:#b48eff">SCMP</span><span class="ev-msg">AES-256 decrypt complete — 2 shards reassembled</span></div><div class="event-row ev-scmp"><span class="ev-time">7m ago</span><span class="ev-level" style="color:#b48eff">SCMP</span><span class="ev-msg">DataEncryption (AES-256) initialized · ShardManager (256KB) ready · AccessLedger online</span></div><div class="event-row ev-scmp"><span class="ev-time">7m ago</span><span class="ev-level" style="color:#b48eff">SCMP</span><span class="ev-msg">Peer ID: 12D3KooWIUZLRGQQY8 · libp2p TCP transport ready</span></div><div class="event-row ev-scmp"><span class="ev-time">7m ago</span><span class="ev-level" style="color:#b48eff">SCMP</span><span class="ev-msg">SCMP Decentralized initializing — Helia IPFS node starting</span></div><div class="event-row ev-ok"><span class="ev-time">7m ago</span><span class="ev-level" style="color:#2ed573">OK</span><span class="ev-msg">Setup loaded: SCMP Decentralized</span></div><div class="event-row ev-cdx"><span class="ev-time">8m ago</span><span class="ev-level" style="color:#39ff9a">CDX</span><span class="ev-msg">PLEX pulse complete — thermal debt: 0.40°C · EU batch: deterministic ✓</span></div><div class="event-row ev-cdx"><span class="ev-time">8m ago</span><span class="ev-level" style="color:#39ff9a">CDX</span><span class="ev-msg">BM25 sparse index built · dense embed cache primed · hybrid fusion ready</span></div><div class="event-row ev-cdx"><span class="ev-time">8m ago</span><span class="ev-level" style="color:#39ff9a">CDX</span><span class="ev-msg">PLEX Runtime™ initializing — pulsed execution engine online</span></div><div class="event-row ev-ok"><span class="ev-time">8m ago</span><span class="ev-level" style="color:#2ed573">OK</span><span class="ev-msg">Setup loaded: CDX v2 / PLEX Runtime™</span></div><div class="event-row ev-critical"><span class="ev-time">8m ago</span><span class="ev-level" style="color:#ff4757">CRITICAL</span><span class="ev-msg">Cooling Unit 14 CPU at 0% — limit approached</span></div><div class="event-row ev-info"><span class="ev-time">8m ago</span><span class="ev-level" style="color:#4a6278">INFO</span><span class="ev-msg">Auto-scale check: 97% utilization</span></div><div class="event-row ev-info"><span class="ev-time">8m ago</span><span class="ev-level" style="color:#4a6278">INFO</span><span class="ev-msg">Auto-scale check: 97% utilization</span></div><div class="event-row ev-critical"><span class="ev-time">8m ago</span><span class="ev-level" style="color:#ff4757">CRITICAL</span><span class="ev-msg">Net Switch 11 CPU at 0% — limit approached</span></div><div class="event-row ev-info"><span class="ev-time">8m ago</span><span class="ev-level" style="color:#4a6278">INFO</span><span class="ev-msg">Auto-scale check: 97% utilization</span></div><div class="event-row ev-ok"><span class="ev-time">8m ago</span><span class="ev-level" style="color:#2ed573">OK</span><span class="ev-msg">Setup loaded: Hybrid Cloud (Mixed)</span></div><div class="event-row ev-ok"><span class="ev-time">8m ago</span><span class="ev-level" style="color:#2ed573">OK</span><span class="ev-msg">Setup loaded: GPU Inference Cluster</span></div><div class="event-row ev-info"><span class="ev-time">8m ago</span><span class="ev-level" style="color:#4a6278">INFO</span><span class="ev-msg">Auto-scale check: 97% utilization</span></div><div class="event-row ev-info"><span class="ev-time">8m ago</span><span class="ev-level" style="color:#4a6278">INFO</span><span class="ev-msg">Auto-scale check: 97% utilization</span></div><div class="event-row ev-ok"><span class="ev-time">8m ago</span><span class="ev-level" style="color:#2ed573">OK</span><span class="ev-msg">Setup loaded: Traditional HPC Stack</span></div><div class="event-row ev-critical"><span class="ev-time">8m ago</span><span class="ev-level" style="color:#ff4757">CRITICAL</span><span class="ev-msg">GPU Cluster 6 CPU at 81.4% — limit approached</span></div><div class="event-row ev-ok"><span class="ev-time">8m ago</span><span class="ev-level" style="color:#2ed573">OK</span><span class="ev-msg">Setup loaded: GPU Inference Cluster</span></div><div class="event-row ev-ok"><span class="ev-time">9m ago</span><span class="ev-level" style="color:#2ed573">OK</span><span class="ev-msg">Setup loaded: Traditional HPC Stack</span></div><div class="event-row ev-info"><span class="ev-time">9m ago</span><span class="ev-level" style="color:#4a6278">INFO</span><span class="ev-msg">Scenario: Stress</span></div><div class="event-row ev-info"><span class="ev-time">9m ago</span><span class="ev-level" style="color:#4a6278">INFO</span><span class="ev-msg">Scenario: Maint.</span></div><div class="event-row ev-ok"><span class="ev-time">9m ago</span><span class="ev-level" style="color:#2ed573">OK</span><span class="ev-msg">Setup loaded: Hybrid Cloud (Mixed)</span></div><div class="event-row ev-cdx"><span class="ev-time">9m ago</span><span class="ev-level" style="color:#39ff9a">CDX</span><span class="ev-msg">BM25 sparse index built · dense embed cache primed · hybrid fusion ready</span></div><div class="event-row ev-cdx"><span class="ev-time">9m ago</span><span class="ev-level" style="color:#39ff9a">CDX</span><span class="ev-msg">PLEX Runtime™ initializing — pulsed execution engine online</span></div><div class="event-row ev-ok"><span class="ev-time">9m ago</span><span class="ev-level" style="color:#2ed573">OK</span><span class="ev-msg">Setup loaded: CDX v2 / PLEX Runtime™</span></div><div class="event-row ev-ok"><span class="ev-time">9m ago</span><span class="ev-level" style="color:#2ed573">OK</span><span class="ev-msg">Setup loaded: Hybrid Cloud (Mixed)</span></div><div class="event-row ev-ok"><span class="ev-time">9m ago</span><span class="ev-level" style="color:#2ed573">OK</span><span class="ev-msg">Setup loaded: GPU Inference Cluster</span></div><div class="event-row ev-ok"><span class="ev-time">9m ago</span><span class="ev-level" style="color:#2ed573">OK</span><span class="ev-msg">Setup loaded: GPU Inference Cluster</span></div><div class="event-row ev-ok"><span class="ev-time">9m ago</span><span class="ev-level" style="color:#2ed573">OK</span><span class="ev-msg">Setup loaded: GPU Inference Cluster</span></div><div class="event-row ev-cdx"><span class="ev-time">9m ago</span><span class="ev-level" style="color:#39ff9a">CDX</span><span class="ev-msg">PLEX pulse complete — thermal debt: 0.19°C · EU batch: deterministic ✓</span></div><div class="event-row ev-cdx"><span class="ev-time">9m ago</span><span class="ev-level" style="color:#39ff9a">CDX</span><span class="ev-msg">BM25 sparse index built · dense embed cache primed · hybrid fusion ready</span></div><div class="event-row ev-cdx"><span class="ev-time">9m ago</span><span class="ev-level" style="color:#39ff9a">CDX</span><span class="ev-msg">PLEX Runtime™ initializing — pulsed execution engine online</span></div><div class="event-row ev-ok"><span class="ev-time">9m ago</span><span class="ev-level" style="color:#2ed573">OK</span><span class="ev-msg">Setup loaded: CDX v2 / PLEX Runtime™</span></div><div class="event-row ev-scmp"><span class="ev-time">9m ago</span><span class="ev-level" style="color:#b48eff">SCMP</span><span class="ev-msg">Capability token validated — HMAC-SHA256 OK · views remaining: 4</span></div><div class="event-row ev-scmp"><span class="ev-time">9m ago</span><span class="ev-level" style="color:#b48eff">SCMP</span><span class="ev-msg">Audit ledger entry appended — CID: Qm24bxyqi3</span></div><div class="event-row ev-scmp"><span class="ev-time">10m ago</span><span class="ev-level" style="color:#b48eff">SCMP</span><span class="ev-msg">Capability token validated — HMAC-SHA256 OK · views remaining: 2</span></div><div class="event-row ev-scmp"><span class="ev-time">10m ago</span><span class="ev-level" style="color:#b48eff">SCMP</span><span class="ev-msg">Capability token validated — HMAC-SHA256 OK · views remaining: 5</span></div><div class="event-row ev-scmp"><span class="ev-time">10m ago</span><span class="ev-level" style="color:#b48eff">SCMP</span><span class="ev-msg">DataEncryption (AES-256) initialized · ShardManager (256KB) ready · AccessLedger online</span></div><div class="event-row ev-scmp"><span class="ev-time">10m ago</span><span class="ev-level" style="color:#b48eff">SCMP</span><span class="ev-msg">Peer ID: 12D3KooWK5SWWN98RB · libp2p TCP transport ready</span></div><div class="event-row ev-scmp"><span class="ev-time">10m ago</span><span class="ev-level" style="color:#b48eff">SCMP</span><span class="ev-msg">SCMP Decentralized initializing — Helia IPFS node starting</span></div><div class="event-row ev-ok"><span class="ev-time">10m ago</span><span class="ev-level" style="color:#2ed573">OK</span><span class="ev-msg">Setup loaded: SCMP Decentralized</span></div><div class="event-row ev-cdx"><span class="ev-time">10m ago</span><span class="ev-level" style="color:#39ff9a">CDX</span><span class="ev-msg">PLEX pulse complete — thermal debt: 1.35°C · EU batch: deterministic ✓</span></div></div>
+    </div>
+
+    <!-- CONFIG TAB -->
+    <div class="tab-content" id="tab-config">
+      <div id="config-list" style="display:none"></div><!-- placeholder, real one in left panel -->
+      <div id="config-panel"><div class="cfg-card" style="border:1px solid #74b9ff33;"><div class="cfg-header"><div><div class="cfg-title" style="color:#74b9ff">❄ Cooling Unit 10</div><div class="cfg-sub">Cooling Unit · [5,5]</div></div><button id="btn-remove">✕ REMOVE</button></div><div class="field-grid"><div class="field"><div class="field-label">CPU CORES</div><input type="number" id="cfg-cores" min="1" max="256" step="4" value="32"></div><div class="field"><div class="field-label">RAM (GB)</div><input type="number" id="cfg-ram" min="8" max="2048" step="8" value="256"></div><div class="field"><div class="field-label">STORAGE (TB)</div><input type="number" id="cfg-stor" min="1" max="500" step="1" value="10"></div><div class="field"><div class="field-label">REDUNDANCY</div><select id="cfg-red"><option>N</option><option selected="">N+1</option><option>2N</option><option>2N+1</option></select></div><div class="field" style="grid-column:1/-1"><div class="field-label" style="display:flex;justify-content:space-between;"><span>TIER LEVEL</span><span class="range-val">Tier 3</span></div><input type="range" id="cfg-tier" min="1" max="4" step="1" value="3"><div class="range-labels"><span>1</span><span>4</span></div></div></div><div class="impact-card"><div class="impact-title">⚡ ESTIMATED IMPACT</div><div class="impact-grid" id="impact-grid"><div><div class="impact-lbl">COMPUTE</div><div class="impact-val">77 GHz</div></div><div><div class="impact-lbl">MEM BW</div><div class="impact-val">205 GB/s</div></div><div><div class="impact-lbl">IOPS</div><div class="impact-val">12,000</div></div><div><div class="impact-lbl">POWER EST.</div><div class="impact-val">10.6 kW</div></div><div><div class="impact-lbl">COST/MO</div><div class="impact-val">$589</div></div><div><div class="impact-lbl">SLA</div><div class="impact-val">99.9%</div></div></div></div></div></div>
+    </div>
+
+  </div><!-- /center-panel -->
+
+</div><!-- /main -->
 
 <script>
+// ── JS (full original logic, minimal changes) ──────────────────
 const GRID_COLS=12,GRID_ROWS=8;
 const UNIT_TYPES={
   rack:{label:"Server Rack",icon:"▣",color:"#00e5ff",power:8,cpu:100,ram:256,heat:3},
@@ -357,18 +921,10 @@ const SETUPS={
     miniStats:[{label:"THROUGHPUT",value:"12,600",unit:"ops/s"},{label:"POWER",value:"142",unit:"kW"},{label:"P99 LAT",value:"8",unit:"ms"}],
     benchmarks:{throughput:12600,p50:4,p95:6,p99:8,power:142,pue:1.18,waterLhr:95,coolingOH:11,deterministic:true,explainable:true,replayable:"yes",costHr:19.40,thermal:"predictive"}
   },
-
   scmp:{id:"scmp",name:"SCMP Decentralized",cssClass:"scmp",color:"#b48eff",
     sub:"No cloud. No central server. IPFS-native peer-to-peer storage. AES-256 encrypted, auto-sharded to 256KB. Capability tokens (HMAC-SHA256) enforce who sees what, how many times, for how long. Immutable audit ledger on IPFS. You own your data.",
     pills:[{t:"IPFS / Helia",bg:"#b48eff20",b:"#b48eff55",c:"#b48eff"},{t:"AES-256",bg:"#00e5ff20",b:"#00e5ff55",c:"#00e5ff"},{t:"Sharded",bg:"#a8ff7820",b:"#a8ff7855",c:"#a8ff78"},{t:"Cap Tokens",bg:"#f7d06020",b:"#f7d06055",c:"#f7d060"},{t:"Zero-Trust",bg:"#fd79a820",b:"#fd79a855",c:"#fd79a8"},{t:"Audit Ledger",bg:"#39ff9a20",b:"#39ff9a55",c:"#39ff9a"}],
-    units:[
-      [2,1,"storage"],[4,1,"storage"],[6,1,"storage"],[8,1,"storage"],[10,1,"storage"],
-      [2,3,"rack"],[4,3,"rack"],[6,3,"rack"],[8,3,"rack"],
-      [3,5,"network"],[7,5,"network"],[11,5,"network"],
-      [1,7,"storage"],[5,7,"storage"],[9,7,"storage"],
-      [11,3,"power"],[11,7,"power"],
-      [1,1,"cooling"],[1,3,"cooling"],
-    ],
+    units:[[2,1,"storage"],[4,1,"storage"],[6,1,"storage"],[8,1,"storage"],[10,1,"storage"],[2,3,"rack"],[4,3,"rack"],[6,3,"rack"],[8,3,"rack"],[3,5,"network"],[7,5,"network"],[11,5,"network"],[1,7,"storage"],[5,7,"storage"],[9,7,"storage"],[11,3,"power"],[11,7,"power"],[1,1,"cooling"],[1,3,"cooling"]],
     miniStats:[{label:"THROUGHPUT",value:"8,200",unit:"ops/s"},{label:"POWER",value:"38",unit:"kW"},{label:"P99 LAT",value:"320",unit:"ms"}],
     benchmarks:{throughput:8200,p50:3,p95:185,p99:320,power:38,pue:1.08,waterLhr:28,coolingOH:6,deterministic:true,explainable:true,replayable:"yes",costHr:8.40,thermal:"predictive",
       ipfsNodes:8,shardSize:256,encAlgo:"AES-256",tokenAlgo:"HMAC-SHA256",ledgerType:"IPFS append-only"}
@@ -454,8 +1010,8 @@ function renderGrid(){
       cell.addEventListener("drop",e=>{
         e.preventDefault();cell.classList.remove("draghover");if(!dragId)return;
         const tc=+cell.dataset.col,tr=+cell.dataset.row;
-        if(!units.some(u=>u.col===tc&&u.row===tr&&u.id!==dragId)){const u=units.find(x=>x.id===dragId);if(u){u.col=tc;u.row=tr;}renderGrid();}
-        dragId=null;
+        if(!units.some(u=>u.col===tc&&u.row===tr&&u.id!==dragId)){const u=units.find(x=>x.id===dragId);if(u){u.col=tc;u.row=tr;}}
+        dragId=null;renderGrid();
       });
       cell.addEventListener("click",()=>{
         if(placingType){
@@ -490,7 +1046,6 @@ function tick(){
   const avgR=Object.values(metrics).filter(m=>m.ram>0).map(m=>m.ram).reduce((a,b,_,ar)=>a+b/ar.length,0)||0;
   const avgN=Object.values(metrics).map(m=>m.net).reduce((a,b,_,ar)=>a+b/ar.length,0)||0;
   const totP=Object.values(metrics).reduce((a,m)=>a+m.pwr,0);
-  const n=sparkData.cpu.length;
   [{key:"cpu",v:avgC},{key:"ram",v:avgR},{key:"net",v:avgN},{key:"pwr",v:totP}].forEach(({key,v})=>{sparkData[key].push({v:+v.toFixed(1)});if(sparkData[key].length>40)sparkData[key].shift();});
   if(Math.random()<.06){const crits=Object.entries(metrics).filter(([,m])=>m.status==="critical");if(crits.length){const [id]=crits[Math.floor(Math.random()*crits.length)];const u=units.find(x=>x.id===id);addEvent("critical",(u?.name||"Unit")+" CPU at "+(metrics[id]?.cpu)+"% — limit approached");}}
   else if(Math.random()<.04){
@@ -532,16 +1087,16 @@ function initSparklines(){
   const wrap=document.getElementById("sparkline-cards");wrap.innerHTML="";
   defs.forEach(({key,label,color,unit})=>{
     const card=document.createElement("div");card.className="stat-card";
-    card.innerHTML=`<div class="stat-label">${label}</div><div class="stat-val" id="sp-val-${key}" style="color:${color}">—<span style="font-size:8px;color:var(--muted);margin-left:2px;">${unit}</span></div><canvas id="sp-${key}" height="44"></canvas>`;
+    card.innerHTML=`<div class="stat-label">${label}</div><div class="stat-val" id="sp-val-${key}" style="color:${color}">—<span style="font-size:11px;color:var(--muted);margin-left:4px;">${unit}</span></div><canvas id="sp-${key}" height="48"></canvas>`;
     wrap.appendChild(card);
-    setTimeout(()=>{const cv=document.getElementById("sp-"+key);cv.width=cv.offsetWidth||180;sparkCtx[key]={canvas:cv,color};},60);
+    setTimeout(()=>{const cv=document.getElementById("sp-"+key);cv.width=cv.offsetWidth||200;sparkCtx[key]={canvas:cv,color};},60);
   });
 }
 
 function renderSparklines(){
   ["cpu","ram","net","pwr"].forEach(key=>{
     const ctx=sparkCtx[key];if(!ctx)return;
-    const{canvas,color}=ctx;canvas.width=canvas.offsetWidth||180;
+    const{canvas,color}=ctx;canvas.width=canvas.offsetWidth||200;
     const c=canvas.getContext("2d"),data=sparkData[key];if(!data.length)return;
     const W=canvas.width,H=canvas.height,vals=data.map(d=>d.v);
     const mn=Math.min(...vals),mx=Math.max(...vals)||1,pad=4;
@@ -550,7 +1105,7 @@ function renderSparklines(){
     c.clearRect(0,0,W,H);
     c.beginPath();c.moveTo(sx(null,0),H);vals.forEach((v,i)=>c.lineTo(sx(null,i),sy(v)));c.lineTo(W,H);c.closePath();
     const g=c.createLinearGradient(0,0,0,H);g.addColorStop(0,color+"44");g.addColorStop(1,color+"00");c.fillStyle=g;c.fill();
-    c.beginPath();vals.forEach((v,i)=>i===0?c.moveTo(sx(null,i),sy(v)):c.lineTo(sx(null,i),sy(v)));c.strokeStyle=color;c.lineWidth=1.5;c.stroke();
+    c.beginPath();vals.forEach((v,i)=>i===0?c.moveTo(sx(null,i),sy(v)):c.lineTo(sx(null,i),sy(v)));c.strokeStyle=color;c.lineWidth=2;c.stroke();
     const last=vals[vals.length-1]||0;const el=document.getElementById("sp-val-"+key);if(el)el.childNodes[0].textContent=last.toFixed(1);
   });
 }
@@ -562,8 +1117,8 @@ function renderTable(){
     const tr=document.createElement("tr");tr.className=u.id===selectedId?"row-sel":"";
     tr.onclick=()=>{selectedId=u.id;renderGrid();renderDetail();renderConfigList();updateSelLabel();renderTable();};
     const sc=m.status?statusColor(m.status):"var(--muted)";
-    const mkB=v=>{const p=Math.min(100,v||0);return`<div class="tbar-wrap"><div class="tbar"><div class="tbar-fill" style="width:${p}%;background:${barColor(p)}"></div></div><span>${v||"—"}</span></div>`;};
-    tr.innerHTML=`<td style="color:${ut.color}">${ut.icon} ${u.name}</td><td style="color:var(--muted2)">${ut.label}</td><td><span style="color:${sc};font-size:7px;">${m.status?m.status.toUpperCase():"—"}</span></td>${mkB(m.cpu)}${mkB(m.ram)}<td>${m.temp||"—"}</td>${mkB(m.pwr)}${mkB(m.net)}`;
+    const mkB=v=>{const p=Math.min(100,v||0);return`<td><div class="tbar-wrap"><div class="tbar"><div class="tbar-fill" style="width:${p}%;background:${barColor(p)}"></div></div><span style="font-size:12px;">${v||"—"}</span></div></td>`;};
+    tr.innerHTML=`<td style="color:${ut.color};font-size:13px;">${ut.icon} ${u.name}</td><td style="color:var(--muted2)">${ut.label}</td><td><span style="color:${sc};font-size:11px;font-weight:700;">${m.status?m.status.toUpperCase():"—"}</span></td>${mkB(m.cpu)}${mkB(m.ram)}<td style="color:var(--text2)">${m.temp||"—"}</td>${mkB(m.pwr)}${mkB(m.net)}`;
     tbody.appendChild(tr);
   });
 }
@@ -574,23 +1129,24 @@ function renderDetail(){
   panel.style.display="block";const ut=UNIT_TYPES[u.type];
   const fields=[["CPU LOAD",m.cpu+"%",m.cpu],["MEMORY",m.ram+"%",m.ram],["TEMP",m.temp+"°C",(m.temp-20)*2],["NETWORK",m.net+"Mb",m.net/1.5],["POWER",m.pwr+"kW",m.pwr*8],["LOAD",m.load+"%",m.load]];
   panel.style.borderColor=ut.color+"33";
-  panel.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;"><span style="font-family:'Orbitron',sans-serif;font-size:11px;color:${ut.color}">${ut.icon} ${u.name}</span><span style="font-size:7px;color:${statusColor(m.status)};background:${statusColor(m.status)}22;padding:2px 7px;border-radius:2px;">${m.status.toUpperCase()}</span></div><div class="det-grid">${fields.map(([l,v,p])=>`<div class="det-cell"><div class="det-label">${l}</div><div class="det-val">${v}</div><div class="det-bar-wrap"><div class="det-bar" style="width:${clamp(p,0,100)}%;background:${barColor(p)}"></div></div></div>`).join("")}</div>`;
+  panel.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;"><span style="font-family:'Orbitron',sans-serif;font-size:13px;font-weight:700;color:${ut.color}">${ut.icon} ${u.name}</span><span style="font-family:'Share Tech Mono',monospace;font-size:11px;color:${statusColor(m.status)};background:${statusColor(m.status)}22;padding:4px 10px;border-radius:3px;">${m.status.toUpperCase()}</span></div><div class="det-grid">${fields.map(([l,v,p])=>`<div class="det-cell"><div class="det-label">${l}</div><div class="det-val">${v}</div><div class="det-bar-wrap"><div class="det-bar" style="width:${clamp(p,0,100)}%;background:${barColor(p)}"></div></div></div>`).join("")}</div>`;
 }
 
 function renderConfigList(){
+  // Populate left panel list
   const list=document.getElementById("config-list");list.innerHTML="";
   units.forEach(u=>{
     const ut=UNIT_TYPES[u.type],m=metrics[u.id];
     const div=document.createElement("div");div.className="cfg-unit"+(u.id===selectedId?" active":"");div.style.borderColor=u.id===selectedId?ut.color+"55":"";
-    div.innerHTML=`<div style="display:flex;align-items:center;gap:5px;"><span style="color:${ut.color}">${ut.icon}</span><div style="flex:1;min-width:0;"><div class="cfg-unit-name">${u.name}</div><div class="cfg-unit-sub">[${u.col},${u.row}]</div></div>${m?`<div class="cfg-dot" style="background:${statusColor(m.status)}"></div>`:""}</div>`;
-    div.onclick=()=>{selectedId=u.id;renderConfigList();renderConfigPanel();renderGrid();updateSelLabel();};
+    div.innerHTML=`<div style="display:flex;align-items:center;gap:8px;"><span style="color:${ut.color};font-size:16px;">${ut.icon}</span><div style="flex:1;min-width:0;"><div class="cfg-unit-name">${u.name}</div><div class="cfg-unit-sub">[${u.col},${u.row}] ${ut.label}</div></div>${m?`<div class="cfg-dot" style="background:${statusColor(m.status)}"></div>`:""}</div>`;
+    div.onclick=()=>{selectedId=u.id;renderConfigList();renderConfigPanel();renderGrid();updateSelLabel();renderDetail();};
     list.appendChild(div);
   });
 }
 
 function renderConfigPanel(){
   const panel=document.getElementById("config-panel");
-  if(!selectedId){panel.innerHTML=`<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:10px;color:#ffffff;letter-spacing:2px;">← SELECT A UNIT</div>`;return;}
+  if(!selectedId){panel.innerHTML=`<div style="display:flex;align-items:center;justify-content:center;height:100%;font-family:'Orbitron',sans-serif;font-size:13px;color:var(--muted2);letter-spacing:3px;">← SELECT A UNIT</div>`;return;}
   const u=units.find(x=>x.id===selectedId);if(!u)return;const ut=UNIT_TYPES[u.type];
   panel.innerHTML=`<div class="cfg-card" style="border:1px solid ${ut.color}33;"><div class="cfg-header"><div><div class="cfg-title" style="color:${ut.color}">${ut.icon} ${u.name}</div><div class="cfg-sub">${ut.label} · [${u.col},${u.row}]</div></div><button id="btn-remove">✕ REMOVE</button></div><div class="field-grid"><div class="field"><div class="field-label">CPU CORES</div><input type="number" id="cfg-cores" min="1" max="256" step="4" value="${u.config.cores}"></div><div class="field"><div class="field-label">RAM (GB)</div><input type="number" id="cfg-ram" min="8" max="2048" step="8" value="${u.config.ramGb}"></div><div class="field"><div class="field-label">STORAGE (TB)</div><input type="number" id="cfg-stor" min="1" max="500" step="1" value="${u.config.storTb}"></div><div class="field"><div class="field-label">REDUNDANCY</div><select id="cfg-red">${["N","N+1","2N","2N+1"].map(o=>`<option${o===u.config.redundancy?" selected":""}>${o}</option>`).join("")}</select></div><div class="field" style="grid-column:1/-1"><div class="field-label" style="display:flex;justify-content:space-between;"><span>TIER LEVEL</span><span class="range-val">Tier ${u.config.tier}</span></div><input type="range" id="cfg-tier" min="1" max="4" step="1" value="${u.config.tier}"><div class="range-labels"><span>1</span><span>4</span></div></div></div><div class="impact-card"><div class="impact-title">⚡ ESTIMATED IMPACT</div><div class="impact-grid" id="impact-grid">${impactHTML(u)}</div></div></div>`;
   document.getElementById("btn-remove").onclick=()=>{const nm=u.name;units=units.filter(x=>x.id!==selectedId);delete metrics[selectedId];selectedId=null;activeSetup="custom";addEvent("warn","Removed: "+nm);renderGrid();renderTable();renderDetail();renderConfigList();renderConfigPanel();updateHeader();renderEvents();updateSelLabel();};
@@ -632,31 +1188,31 @@ function renderCapacity(){
   const computeU=units.filter(u=>["rack","gpu"].includes(u.type)).length;
   const risks=[{active:cool<Math.ceil(computeU/3),level:"warn",msg:"Insufficient cooling",rec:"1 cooling unit per 3 compute nodes"},{active:ups===0,level:"critical",msg:"No UPS deployed",rec:"Add at least 1 Power UPS"},{active:crits>0,level:"critical",msg:crits+" unit(s) critical",rec:"Rebalance workloads"},{active:units.length/(GRID_COLS*GRID_ROWS)>.6,level:"warn",msg:"Floor density >60%",rec:"Plan additional space"},{active:units.filter(u=>u.type==="network").length<2,level:"info",msg:"Single network switch",rec:"Add secondary for HA"}];
   const rl=document.getElementById("risk-list");rl.innerHTML="";
-  risks.forEach(r=>{const c=!r.active?"#2ed573":r.level==="critical"?"#ff4757":r.level==="warn"?"#ffa502":"#00e5ff";const d=document.createElement("div");d.className="risk-row"+(r.active?"":" pass");d.style.cssText=`background:${!r.active?"#2ed57308":r.level==="critical"?"#ff475710":r.level==="warn"?"#ffa50210":"#00e5ff10"};border:1px solid ${c}33;opacity:${r.active?1:.4};`;d.innerHTML=`<span style="color:${c};flex-shrink:0">${!r.active?"✓":r.level==="critical"?"✕":r.level==="warn"?"⚠":"ℹ"}</span><div><div class="risk-msg">${r.msg}</div>${r.active?`<div class="risk-rec">→ ${r.rec}</div>`:""}</div>`;rl.appendChild(d);});
+  risks.forEach(r=>{const c=!r.active?"#2ed573":r.level==="critical"?"#ff4757":r.level==="warn"?"#ffa502":"#00e5ff";const d=document.createElement("div");d.className="risk-row"+(r.active?"":" pass");d.style.cssText=`background:${!r.active?"#2ed57308":r.level==="critical"?"#ff475710":r.level==="warn"?"#ffa50210":"#00e5ff10"};border:1px solid ${c}33;opacity:${r.active?1:.45};border-radius:4px;`;d.innerHTML=`<span style="color:${c};flex-shrink:0;font-size:16px;">${!r.active?"✓":r.level==="critical"?"✕":r.level==="warn"?"⚠":"ℹ"}</span><div><div class="risk-msg">${r.msg}</div>${r.active?`<div class="risk-rec">→ ${r.rec}</div>`:""}</div>`;rl.appendChild(d);});
 }
 
 function drawBarChart(id,color,data){
   const canvas=document.getElementById(id);if(!canvas)return;
-  canvas.width=canvas.offsetWidth||400;
+  canvas.width=canvas.offsetWidth||500;
   const c=canvas.getContext("2d"),W=canvas.width,H=canvas.height;
   c.clearRect(0,0,W,H);if(!data.length)return;
-  const maxV=Math.max(...data.map(d=>d.val),1),bW=Math.max(4,(W-40)/data.length-3),padL=6,padB=28,padT=6,chartH=H-padB-padT;
+  const maxV=Math.max(...data.map(d=>d.val),1),bW=Math.max(6,(W-60)/data.length-4),padL=8,padB=32,padT=8,chartH=H-padB-padT;
   data.forEach((d,i)=>{
-    const x=padL+i*((W-padL-6)/data.length)+(((W-padL-6)/data.length)-bW)/2,bH=(d.val/maxV)*chartH;
+    const x=padL+i*((W-padL-8)/data.length)+(((W-padL-8)/data.length)-bW)/2,bH=(d.val/maxV)*chartH;
     c.fillStyle=(d.val>90?"#ff4757":d.val>75?"#ffa502":color)+"cc";c.fillRect(x,padT+chartH-bH,bW,bH);
-    c.fillStyle="#4a6278";c.font="6px 'Share Tech Mono',monospace";c.textAlign="center";c.save();c.translate(x+bW/2,H-4);c.rotate(-.45);c.fillText(d.name,0,0);c.restore();
+    c.fillStyle="#4a6278";c.font="7px 'Share Tech Mono',monospace";c.textAlign="center";c.save();c.translate(x+bW/2,H-4);c.rotate(-.5);c.fillText(d.name,0,0);c.restore();
   });
-  c.fillStyle="#4a6278";c.font="7px 'Share Tech Mono',monospace";c.textAlign="left";c.fillText(maxV.toFixed(0),0,padT+8);c.fillText("0",0,H-padB+8);
+  c.fillStyle="#607890";c.font="8px 'Share Tech Mono',monospace";c.textAlign="left";c.fillText(maxV.toFixed(0),2,padT+10);c.fillText("0",2,H-padB+10);
 }
 
-// ── SETUPS TAB ──
 function renderSetups(){
   const grid=document.getElementById("setup-grid");grid.innerHTML="";
   Object.values(SETUPS).forEach(setup=>{
     const card=document.createElement("div");
     card.className="setup-card "+setup.cssClass+(activeSetup===setup.id?" active-setup":"");
+    if(activeSetup===setup.id)card.style.borderColor=setup.color+"66";
     const pillsH=setup.pills.map(p=>`<span class="pill" style="background:${p.bg};border-color:${p.b};color:${p.c}">${p.t}</span>`).join("");
-    const statsH=setup.miniStats.map(s=>`<div><div class="mini-stat-lbl">${s.label}</div><div class="mini-stat-val" style="color:${setup.color}">${s.value}<span style="font-size:7px;color:var(--muted);margin-left:2px;">${s.unit}</span></div></div>`).join("");
+    const statsH=setup.miniStats.map(s=>`<div><div class="mini-stat-lbl">${s.label}</div><div class="mini-stat-val" style="color:${setup.color}">${s.value}<span style="font-size:9px;color:var(--muted);margin-left:3px;">${s.unit}</span></div></div>`).join("");
     card.innerHTML=`${activeSetup===setup.id?`<div class="active-badge">● ACTIVE</div>`:""}
       <div class="setup-name" style="color:${setup.color}">${setup.name}</div>
       <div class="setup-sub">${setup.sub}</div>
@@ -688,24 +1244,24 @@ function renderPlexDetail(){
       <div class="pulse-anim">${[0,1,2,3,4].map(i=>`<div class="pulse-bar" style="animation-delay:${i*.15}s"></div>`).join("")}</div>
       PLEX RUNTIME™ — CDX v2 LIVE ENGINE STATUS
     </div>
-    <div class="g3" style="margin-bottom:10px;">
-      <div style="background:#091510;border:1px solid #39ff9a22;border-radius:3px;padding:8px;"><div style="font-size:7px;color:#39ff9a;letter-spacing:1px;margin-bottom:4px;">PULSE TIMING</div><div style="font-family:'Orbitron',sans-serif;font-size:15px;color:#fff;font-weight:700;">${pm}<span style="font-size:8px;color:var(--muted);margin-left:2px;">ms</span></div><div style="font-size:7px;color:var(--muted);margin-top:2px;">bounded · deterministic</div></div>
-      <div style="background:#091510;border:1px solid #39ff9a22;border-radius:3px;padding:8px;"><div style="font-size:7px;color:#39ff9a;letter-spacing:1px;margin-bottom:4px;">EU BATCH SIZE</div><div style="font-family:'Orbitron',sans-serif;font-size:15px;color:#fff;font-weight:700;">${euc}<span style="font-size:8px;color:var(--muted);margin-left:2px;">units</span></div><div style="font-size:7px;color:var(--muted);margin-top:2px;">exhaustive · idempotent</div></div>
-      <div style="background:#091510;border:1px solid #39ff9a22;border-radius:3px;padding:8px;"><div style="font-size:7px;color:#39ff9a;letter-spacing:1px;margin-bottom:4px;">THERMAL DEBT</div><div style="font-family:'Orbitron',sans-serif;font-size:15px;color:#fff;font-weight:700;">${td}<span style="font-size:8px;color:var(--muted);margin-left:2px;">°C</span></div><div style="font-size:7px;color:var(--muted);margin-top:2px;">predictive avoidance</div></div>
+    <div class="g3" style="margin-bottom:12px;">
+      <div style="background:#091510;border:1px solid #39ff9a22;border-radius:4px;padding:12px;"><div style="font-size:10px;color:#39ff9a;letter-spacing:1px;margin-bottom:5px;">PULSE TIMING</div><div style="font-family:'Orbitron',sans-serif;font-size:18px;color:#fff;font-weight:700;">${pm}<span style="font-size:10px;color:var(--muted);margin-left:3px;">ms</span></div><div style="font-size:10px;color:var(--muted);margin-top:3px;">bounded · deterministic</div></div>
+      <div style="background:#091510;border:1px solid #39ff9a22;border-radius:4px;padding:12px;"><div style="font-size:10px;color:#39ff9a;letter-spacing:1px;margin-bottom:5px;">EU BATCH SIZE</div><div style="font-family:'Orbitron',sans-serif;font-size:18px;color:#fff;font-weight:700;">${euc}<span style="font-size:10px;color:var(--muted);margin-left:3px;">units</span></div><div style="font-size:10px;color:var(--muted);margin-top:3px;">exhaustive · idempotent</div></div>
+      <div style="background:#091510;border:1px solid #39ff9a22;border-radius:4px;padding:12px;"><div style="font-size:10px;color:#39ff9a;letter-spacing:1px;margin-bottom:5px;">THERMAL DEBT</div><div style="font-family:'Orbitron',sans-serif;font-size:18px;color:#fff;font-weight:700;">${td}<span style="font-size:10px;color:var(--muted);margin-left:3px;">°C</span></div><div style="font-size:10px;color:var(--muted);margin-top:3px;">predictive avoidance</div></div>
     </div>
-    <div style="font-size:7px;color:#39ff9a;letter-spacing:2px;margin-bottom:6px;">HYBRID SEARCH ENGINE — BM25 SPARSE + DENSE EMBEDDING FUSION (search.js CDX v2)</div>
-    <div class="g3" style="margin-bottom:10px;">
-      <div class="pipe-stage"><div class="pipe-stage-title">SPARSE (BM25)</div><div class="pipe-stage-val">${bs}</div><div class="pipe-stage-sub">k1=1.2 · b=0.75</div><div style="height:2px;background:#39ff9a22;border-radius:1px;margin-top:5px;"><div style="height:100%;width:${Math.min(100,+bs/3*100).toFixed(0)}%;background:#39ff9a;border-radius:1px;"></div></div></div>
-      <div class="pipe-stage"><div class="pipe-stage-title">DENSE (cosine)</div><div class="pipe-stage-val">${ds}</div><div class="pipe-stage-sub">dim=384 · normalized</div><div style="height:2px;background:#00e5ff22;border-radius:1px;margin-top:5px;"><div style="height:100%;width:${Math.min(100,+ds*100).toFixed(0)}%;background:#00e5ff;border-radius:1px;"></div></div></div>
-      <div class="pipe-stage" style="border-color:#f7d06044;"><div class="pipe-stage-title" style="color:#f7d060;">FUSED SCORE</div><div class="pipe-stage-val" style="color:#f7d060;">${fs}</div><div class="pipe-stage-sub">α=0.7 adaptive</div><div style="height:2px;background:#f7d06022;border-radius:1px;margin-top:5px;"><div style="height:100%;width:${Math.min(100,+fs*100).toFixed(0)}%;background:#f7d060;border-radius:1px;"></div></div></div>
+    <div style="font-size:10px;color:#39ff9a;letter-spacing:2px;margin-bottom:8px;">HYBRID SEARCH ENGINE — BM25 SPARSE + DENSE EMBEDDING FUSION</div>
+    <div class="g3" style="margin-bottom:12px;">
+      <div class="pipe-stage"><div class="pipe-stage-title">SPARSE (BM25)</div><div class="pipe-stage-val">${bs}</div><div class="pipe-stage-sub">k1=1.2 · b=0.75</div><div style="height:3px;background:#39ff9a22;border-radius:2px;margin-top:6px;"><div style="height:100%;width:${Math.min(100,+bs/3*100).toFixed(0)}%;background:#39ff9a;border-radius:2px;"></div></div></div>
+      <div class="pipe-stage"><div class="pipe-stage-title">DENSE (cosine)</div><div class="pipe-stage-val">${ds}</div><div class="pipe-stage-sub">dim=384 · normalized</div><div style="height:3px;background:#00e5ff22;border-radius:2px;margin-top:6px;"><div style="height:100%;width:${Math.min(100,+ds*100).toFixed(0)}%;background:#00e5ff;border-radius:2px;"></div></div></div>
+      <div class="pipe-stage" style="border-color:#f7d06044;"><div class="pipe-stage-title" style="color:#f7d060;">FUSED SCORE</div><div class="pipe-stage-val" style="color:#f7d060;">${fs}</div><div class="pipe-stage-sub">α=0.7 adaptive</div><div style="height:3px;background:#f7d06022;border-radius:2px;margin-top:6px;"><div style="height:100%;width:${Math.min(100,+fs*100).toFixed(0)}%;background:#f7d060;border-radius:2px;"></div></div></div>
     </div>
-    <div style="font-size:7px;color:#39ff9a;letter-spacing:2px;margin-bottom:5px;">EXECUTION UNIT PIPELINE (CDX v2)</div>
+    <div style="font-size:10px;color:#39ff9a;letter-spacing:2px;margin-bottom:8px;">EXECUTION UNIT PIPELINE (CDX v2)</div>
     <div class="eu-flow">
-      ${[["INTENT ROUTER","#39ff9a"],["LOCAL ORCH","#00e5ff"],["PULSE LAYER","#74b9ff"],["EU EXECUTE","#a8ff78"],["REASON RECORD","#f7d060"]].map((s,i)=>`${i>0?`<span style="color:var(--muted);font-size:10px;">→</span>`:""}
+      ${[["INTENT ROUTER","#39ff9a"],["LOCAL ORCH","#00e5ff"],["PULSE LAYER","#74b9ff"],["EU EXECUTE","#a8ff78"],["REASON RECORD","#f7d060"]].map((s,i)=>`${i>0?`<span style="color:var(--muted);font-size:12px;">→</span>`:""}
         <span class="eu-box" style="background:${s[1]}18;border-color:${s[1]}55;color:${s[1]}">${s[0]}</span>`).join("")}
     </div>
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-top:8px;">
-      ${[["G1 DETERMINISM","✓ Identical inputs → identical outputs"],["G2 EXHAUSTIVE","✓ Each input processed exactly once"],["G3 BOUNDED","✓ CPU/mem/thermal capped always"],["G4 LINEAR COST","✓ Cost ∝ input size linearly"],["G5 REPLAYABLE","✓ Any execution deterministically replayable"],["G6 EXPLAINABLE","✓ Every decision emits reason record"]].map(([g,d])=>`<div style="background:#091510;border:1px solid #39ff9a1a;border-radius:2px;padding:5px;"><div style="font-size:7px;color:#39ff9a;letter-spacing:1px;">${g}</div><div style="font-size:7px;color:var(--muted);margin-top:2px;">${d}</div></div>`).join("")}
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:10px;">
+      ${[["G1 DETERMINISM","✓ Identical inputs → identical outputs"],["G2 EXHAUSTIVE","✓ Each input processed exactly once"],["G3 BOUNDED","✓ CPU/mem/thermal capped always"],["G4 LINEAR COST","✓ Cost ∝ input size linearly"],["G5 REPLAYABLE","✓ Any execution deterministically replayable"],["G6 EXPLAINABLE","✓ Every decision emits reason record"]].map(([g,d])=>`<div style="background:#091510;border:1px solid #39ff9a1a;border-radius:3px;padding:8px;"><div style="font-size:10px;color:#39ff9a;letter-spacing:1px;">${g}</div><div style="font-size:11px;color:var(--muted2);margin-top:3px;">${d}</div></div>`).join("")}
     </div>
   </div>`;
 }
@@ -714,8 +1270,6 @@ function renderSCMPDetail(){
   const el=document.getElementById("scmp-detail");
   if(activeSetup!=="scmp"){el.style.display="none";return;}
   el.style.display="block";
-
-  // Live-ish simulated SCMP metrics
   const ipfsNodes=units.filter(u=>u.type==="storage").length;
   const shardMs=(120+Math.random()*60).toFixed(0);
   const encMs=(2+Math.random()*2).toFixed(1);
@@ -723,136 +1277,104 @@ function renderSCMPDetail(){
   const ledgerEntries=Math.floor(220+Math.random()*80);
   const activePolicies=Math.floor(12+Math.random()*8);
   const totalCIDs=Math.floor(ipfsNodes*14+Math.random()*20);
-  const shardPct=Math.floor(60+Math.random()*38);
   const cacheHit=Math.floor(72+Math.random()*24);
   const peerID="12D3KooW"+Math.random().toString(36).slice(2,14).toUpperCase();
 
   el.innerHTML=`<div class="scmp-section">
     <div class="scmp-title">
-      <span style="font-size:16px">◈</span>
-      SCMP DECENTRALIZED — LIVE NODE STATUS (ipfs-storage.js + access-control.js)
+      <span style="font-size:18px">◈</span>
+      SCMP DECENTRALIZED — LIVE NODE STATUS
     </div>
-
-    <!-- top KPI row -->
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px;">
-      ${[
-        ["IPFS NODES",ipfsNodes,"◈","#b48eff","Helia · libp2p TCP"],
-        ["TOTAL CIDs",totalCIDs,"⬡","#00e5ff","Content-addressed"],
-        ["ACTIVE POLICIES",activePolicies,"🔑","#f7d060","Capability tokens"],
-        ["LEDGER ENTRIES",ledgerEntries,"📋","#39ff9a","Append-only IPFS"],
-      ].map(([l,v,ic,c,sub])=>`
-        <div style="background:#090814;border:1px solid ${c}22;border-radius:3px;padding:8px;">
-          <div style="font-size:7px;color:${c};letter-spacing:1px;margin-bottom:3px;">${l}</div>
-          <div style="font-family:'Orbitron',sans-serif;font-size:17px;color:#fff;font-weight:700;">${ic} ${v}</div>
-          <div style="font-size:7px;color:var(--muted);margin-top:2px;">${sub}</div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:12px;">
+      ${[[`IPFS NODES`,ipfsNodes,"◈","#b48eff","Helia · libp2p TCP"],[`TOTAL CIDs`,totalCIDs,"⬡","#00e5ff","Content-addressed"],["ACTIVE POLICIES",activePolicies,"🔑","#f7d060","Capability tokens"],["LEDGER ENTRIES",ledgerEntries,"📋","#39ff9a","Append-only IPFS"]].map(([l,v,ic,c,sub])=>`
+        <div style="background:#090814;border:1px solid ${c}22;border-radius:4px;padding:10px;">
+          <div style="font-size:10px;color:${c};letter-spacing:1px;margin-bottom:4px;">${l}</div>
+          <div style="font-family:'Orbitron',sans-serif;font-size:20px;color:#fff;font-weight:700;">${ic} ${v}</div>
+          <div style="font-size:10px;color:var(--muted);margin-top:3px;">${sub}</div>
         </div>`).join("")}
     </div>
-
-    <!-- Pipeline: encrypt → shard → IPFS -->
-    <div style="font-size:7px;color:#b48eff;letter-spacing:2px;margin-bottom:6px;">DATA PIPELINE — ipfs-storage.js (DataEncryption → ShardManager → IPFSStorage)</div>
-    <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;margin-bottom:10px;">
-      ${[
-        {s:"APPLICATION DATA",c:"#b48eff"},
-        {s:"AES-256 ENCRYPT",c:"#00e5ff",stat:encMs+"ms"},
-        {s:"256KB SHARD",c:"#a8ff78",stat:shardMs+"ms/shard"},
-        {s:"SHA-256 HASH",c:"#f7d060",stat:"per shard"},
-        {s:"IPFS ADD (CID)",c:"#39ff9a",stat:"content-addr"},
-        {s:"METADATA CID",c:"#fd79a8",stat:"index entry"},
-      ].map((s,i)=>`${i>0?`<span style="color:var(--muted);font-size:9px;">→</span>`:""}
-        <div style="background:${s.c}15;border:1px solid ${s.c}44;border-radius:2px;padding:3px 7px;text-align:center;">
-          <div style="font-size:7px;color:${s.c};letter-spacing:1px;">${s.s}</div>
-          ${s.stat?`<div style="font-size:6px;color:var(--muted);margin-top:1px;">${s.stat}</div>`:""}
+    <div style="font-size:10px;color:#b48eff;letter-spacing:2px;margin-bottom:8px;">DATA PIPELINE — DataEncryption → ShardManager → IPFSStorage</div>
+    <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-bottom:12px;">
+      ${[{s:"APPLICATION DATA",c:"#b48eff"},{s:"AES-256 ENCRYPT",c:"#00e5ff",stat:encMs+"ms"},{s:"256KB SHARD",c:"#a8ff78",stat:shardMs+"ms/shard"},{s:"SHA-256 HASH",c:"#f7d060",stat:"per shard"},{s:"IPFS ADD (CID)",c:"#39ff9a",stat:"content-addr"},{s:"METADATA CID",c:"#fd79a8",stat:"index entry"}].map((s,i)=>`${i>0?`<span style="color:var(--muted);font-size:12px;">→</span>`:""}
+        <div style="background:${s.c}15;border:1px solid ${s.c}44;border-radius:3px;padding:5px 10px;text-align:center;">
+          <div style="font-size:10px;color:${s.c};letter-spacing:.5px;">${s.s}</div>
+          ${s.stat?`<div style="font-size:9px;color:var(--muted);margin-top:2px;">${s.stat}</div>`:""}
         </div>`).join("")}
     </div>
-
-    <!-- Access control pipeline -->
-    <div style="font-size:7px;color:#f7d060;letter-spacing:2px;margin-bottom:6px;">ACCESS CONTROL — access-control.js (AccessPolicy → CapabilityToken → AccessLedger)</div>
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:10px;">
-      <div style="background:#090814;border:1px solid #f7d06033;border-radius:3px;padding:8px;">
-        <div style="font-size:7px;color:#f7d060;letter-spacing:1px;margin-bottom:5px;">CAPABILITY TOKEN</div>
-        <div style="font-size:7px;color:var(--muted);line-height:1.7;">
-          <div>Sign algo: <span style="color:#f7d060;">HMAC-SHA256</span></div>
-          <div>Key derive: <span style="color:#f7d060;">HMAC(policy+master)</span></div>
-          <div>Verify: <span style="color:#39ff9a;">${tokenMs}ms</span></div>
-          <div>Forgeable: <span style="color:#ff4757;">NO ✗</span></div>
+    <div style="font-size:10px;color:#f7d060;letter-spacing:2px;margin-bottom:8px;">ACCESS CONTROL — AccessPolicy → CapabilityToken → AccessLedger</div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px;">
+      <div style="background:#090814;border:1px solid #f7d06033;border-radius:4px;padding:10px;">
+        <div style="font-size:10px;color:#f7d060;letter-spacing:1px;margin-bottom:6px;">CAPABILITY TOKEN</div>
+        <div style="font-size:12px;color:var(--muted2);line-height:1.8;">
+          Sign algo: <span style="color:#f7d060;">HMAC-SHA256</span><br>
+          Key derive: <span style="color:#f7d060;">HMAC(policy+master)</span><br>
+          Verify: <span style="color:#39ff9a;">${tokenMs}ms</span><br>
+          Forgeable: <span style="color:#ff4757;">NO ✗</span>
         </div>
       </div>
-      <div style="background:#090814;border:1px solid #b48eff33;border-radius:3px;padding:8px;">
-        <div style="font-size:7px;color:#b48eff;letter-spacing:1px;margin-bottom:5px;">POLICY ENGINE</div>
-        <div style="font-size:7px;color:var(--muted);line-height:1.7;">
-          <div>Time limit: <span style="color:#b48eff;">expiresAt check</span></div>
-          <div>View limit: <span style="color:#b48eff;">maxViews counter</span></div>
-          <div>Revocation: <span style="color:#b48eff;">instant</span></div>
-          <div>Permissions: <span style="color:#b48eff;">read/write/delete</span></div>
+      <div style="background:#090814;border:1px solid #b48eff33;border-radius:4px;padding:10px;">
+        <div style="font-size:10px;color:#b48eff;letter-spacing:1px;margin-bottom:6px;">POLICY ENGINE</div>
+        <div style="font-size:12px;color:var(--muted2);line-height:1.8;">
+          Time limit: <span style="color:#b48eff;">expiresAt check</span><br>
+          View limit: <span style="color:#b48eff;">maxViews counter</span><br>
+          Revocation: <span style="color:#b48eff;">instant</span><br>
+          Permissions: <span style="color:#b48eff;">read/write/delete</span>
         </div>
       </div>
-      <div style="background:#090814;border:1px solid #39ff9a33;border-radius:3px;padding:8px;">
-        <div style="font-size:7px;color:#39ff9a;letter-spacing:1px;margin-bottom:5px;">AUDIT LEDGER (IPFS)</div>
-        <div style="font-size:7px;color:var(--muted);line-height:1.7;">
-          <div>Type: <span style="color:#39ff9a;">append-only chain</span></div>
-          <div>Entries: <span style="color:#39ff9a;">${ledgerEntries}</span></div>
-          <div>Mutable: <span style="color:#ff4757;">NO ✗</span></div>
-          <div>Entry types: <span style="color:#39ff9a;">GRANT/VIEW/REVOKE</span></div>
+      <div style="background:#090814;border:1px solid #39ff9a33;border-radius:4px;padding:10px;">
+        <div style="font-size:10px;color:#39ff9a;letter-spacing:1px;margin-bottom:6px;">AUDIT LEDGER (IPFS)</div>
+        <div style="font-size:12px;color:var(--muted2);line-height:1.8;">
+          Type: <span style="color:#39ff9a;">append-only chain</span><br>
+          Entries: <span style="color:#39ff9a;">${ledgerEntries}</span><br>
+          Mutable: <span style="color:#ff4757;">NO ✗</span><br>
+          Types: <span style="color:#39ff9a;">GRANT/VIEW/REVOKE</span>
         </div>
       </div>
     </div>
-
-    <!-- IPFS node distribution -->
-    <div style="font-size:7px;color:#00e5ff;letter-spacing:2px;margin-bottom:6px;">IPFS NODE CLUSTER — Helia · MemoryBlockstore · libp2p</div>
-    <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px;">
-      ${units.filter(u=>u.type==="storage").map((u,i)=>{
+    <div style="font-size:10px;color:#00e5ff;letter-spacing:2px;margin-bottom:8px;">IPFS NODE CLUSTER — Helia · MemoryBlockstore · libp2p</div>
+    <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px;">
+      ${units.filter(u=>u.type==="storage").map((u)=>{
         const m=metrics[u.id];
         const shards=Math.floor(8+Math.random()*12);
-        return `<div style="background:#090814;border:1px solid #b48eff33;border-radius:2px;padding:5px 8px;min-width:110px;">
-          <div style="font-size:7px;color:#b48eff;margin-bottom:2px;">◈ ${u.name}</div>
-          <div style="font-size:7px;color:var(--muted);">CIDs: <span style="color:#00e5ff">${shards}</span> · Pos [${u.col},${u.row}]</div>
+        return `<div style="background:#090814;border:1px solid #b48eff33;border-radius:3px;padding:7px 10px;min-width:130px;">
+          <div style="font-size:11px;color:#b48eff;margin-bottom:3px;">◈ ${u.name}</div>
+          <div style="font-size:11px;color:var(--muted);">CIDs: <span style="color:#00e5ff">${shards}</span> · [${u.col},${u.row}]</div>
           <div class="shard-track"><div class="shard-fill" style="width:${Math.min(100,shards*5)}%"></div></div>
-          ${m?`<div style="font-size:6px;color:${m.pwr<1?'#39ff9a':'#ffa502'};margin-top:2px;">${m.pwr.toFixed(1)}kW · ${m.status}</div>`:""}
+          ${m?`<div style="font-size:10px;color:${m.pwr<1?'#39ff9a':'#ffa502'};margin-top:3px;">${m.pwr.toFixed(1)}kW · ${m.status}</div>`:""}
         </div>`;
       }).join("")}
     </div>
-
-    <!-- performance + network -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-      <div style="background:#090814;border:1px solid #00e5ff22;border-radius:3px;padding:8px;">
-        <div style="font-size:7px;color:#00e5ff;letter-spacing:1px;margin-bottom:6px;">OPERATION TIMING (O-NOTATION)</div>
-        ${[
-          ["store() write","O(n) data size",shardMs+" ms/shard","#a8ff78"],
-          ["get() read","O(1) cached · O(n) cold","3–320 ms","#00e5ff"],
-          ["shareData() grant","O(1)","~"+Math.floor(80+Math.random()*80)+" ms","#f7d060"],
-          ["revokeAccess()","O(1)","~"+Math.floor(60+Math.random()*60)+" ms","#fd79a8"],
-          ["getAuditTrail()","O(n) ledger","<1ms/1000 entries","#39ff9a"],
-        ].map(([op,big,t,c])=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:2px 0;border-bottom:1px solid #1a2a3a;">
-          <span style="font-size:7px;color:var(--muted);">${op}</span>
-          <span style="font-size:7px;color:${c};">${t}</span>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+      <div style="background:#090814;border:1px solid #00e5ff22;border-radius:4px;padding:12px;">
+        <div style="font-size:10px;color:#00e5ff;letter-spacing:1px;margin-bottom:8px;">OPERATION TIMING</div>
+        ${[["store() write","O(n) data",shardMs+"ms/shard","#a8ff78"],["get() read","O(1) cached","3–320 ms","#00e5ff"],["shareData()","O(1)","~"+Math.floor(80+Math.random()*80)+"ms","#f7d060"],["revokeAccess()","O(1)","~"+Math.floor(60+Math.random()*60)+"ms","#fd79a8"],["getAuditTrail()","O(n) ledger","<1ms/1k","#39ff9a"]].map(([op,big,t,c])=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid #1a2a3a;">
+          <span style="font-size:12px;color:var(--muted2);">${op}</span>
+          <span style="font-size:12px;color:${c};">${t}</span>
         </div>`).join("")}
       </div>
-      <div style="background:#090814;border:1px solid #b48eff22;border-radius:3px;padding:8px;">
-        <div style="font-size:7px;color:#b48eff;letter-spacing:1px;margin-bottom:6px;">NETWORK / PEER INFO</div>
-        <div style="font-size:7px;color:var(--muted);line-height:1.9;">
-          <div>Peer ID: <span style="color:#b48eff;font-size:6px;">${peerID.slice(0,22)}…</span></div>
-          <div>Transport: <span style="color:#00e5ff;">libp2p TCP + Yamux</span></div>
-          <div>Encryption: <span style="color:#00e5ff;">Noise protocol</span></div>
-          <div>Cache hit rate: <span style="color:#39ff9a;">${cacheHit}%</span></div>
-          <div>Shard integrity: <span style="color:#39ff9a;">SHA-256 verified ✓</span></div>
-          <div>No central server: <span style="color:#39ff9a;">TRUE ✓</span></div>
+      <div style="background:#090814;border:1px solid #b48eff22;border-radius:4px;padding:12px;">
+        <div style="font-size:10px;color:#b48eff;letter-spacing:1px;margin-bottom:8px;">NETWORK / PEER INFO</div>
+        <div style="font-size:12px;color:var(--muted2);line-height:2;">
+          Peer ID: <span style="color:#b48eff;font-size:10px;">${peerID.slice(0,22)}…</span><br>
+          Transport: <span style="color:#00e5ff;">libp2p TCP + Yamux</span><br>
+          Encryption: <span style="color:#00e5ff;">Noise protocol</span><br>
+          Cache hit rate: <span style="color:#39ff9a;">${cacheHit}%</span><br>
+          Shard integrity: <span style="color:#39ff9a;">SHA-256 verified ✓</span><br>
+          No central server: <span style="color:#39ff9a;">TRUE ✓</span>
         </div>
       </div>
     </div>
   </div>`;
 }
 
-// ── COMPARE TAB ──
 function renderCompare(){
   const setups=Object.values(SETUPS),bmarks=setups.map(s=>s.benchmarks);
   function classify(vals,lower=false){const best=lower?Math.min(...vals):Math.max(...vals),worst=lower?Math.max(...vals):Math.min(...vals);return vals.map(v=>v===best?"best":v===worst?"worst":"mid");}
   const tpC=classify(bmarks.map(b=>b.throughput)),p50C=classify(bmarks.map(b=>b.p50),true),p95C=classify(bmarks.map(b=>b.p95),true),p99C=classify(bmarks.map(b=>b.p99),true);
   const pwC=classify(bmarks.map(b=>b.power),true),pueC=classify(bmarks.map(b=>b.pue),true),wC=classify(bmarks.map(b=>b.waterLhr),true),coC=classify(bmarks.map(b=>b.coolingOH),true),csC=classify(bmarks.map(b=>b.costHr),true);
-
   const hdr=`<div class="cmp-header-row"><div></div>${setups.map(s=>`<div class="cmp-col-head" style="background:${s.color}18;border:1px solid ${s.color}44;color:${s.color}">${s.name}</div>`).join("")}</div>`;
   const boolC=v=>{if(v===true||v==="yes")return`<div class="cmp-val yes">YES ✓</div>`;if(v===false||v==="no")return`<div class="cmp-val no">NO ✗</div>`;return`<div class="cmp-val partial">PARTIAL</div>`;};
   const vc=(v,cls)=>`<div class="cmp-cell"><div class="cmp-val ${cls}">${v}</div>${cls==="best"?`<div class="win-badge">▲ BEST</div>`:""}</div>`;
-
   const sections=[
     {label:"THROUGHPUT & LATENCY",rows:[
       {label:"Throughput (ops/s)",vals:bmarks.map((b,i)=>[b.throughput.toLocaleString(),tpC[i]])},
@@ -886,32 +1408,26 @@ function renderCompare(){
       {label:"Self-Sovereign",bool:true,vals:[false,false,false,false,true]},
     ]},
   ];
-
   let html=hdr;
   sections.forEach(s=>{
     html+=`<div class="cmp-section-label">${s.label}</div>`;
     s.rows.forEach(row=>{
       html+=`<div class="cmp-row"><div class="cmp-row-label">${row.label}</div>`;
-      if(row.bool){
-        row.vals.forEach(v=>{html+=`<div class="cmp-cell">${boolC(v)}</div>`;});
-      } else {
-        row.vals.forEach(([v,cls])=>{html+=vc(v,cls);});
-      }
+      if(row.bool){row.vals.forEach(v=>{html+=`<div class="cmp-cell">${boolC(v)}</div>`;});}
+      else{row.vals.forEach(([v,cls])=>{html+=vc(v,cls);});}
       html+="</div>";
     });
   });
   document.getElementById("compare-table").innerHTML=html;
-
   const chartsWrap=document.getElementById("compare-charts");
   chartsWrap.innerHTML=`<div class="cmp-chart-wrap"><div class="card-title">POWER DRAW COMPARISON (kW) — lower is better</div><div class="bar-compare" id="bar-power"></div></div><div class="cmp-chart-wrap"><div class="card-title">LATENCY PROFILE — P50 / P95 / P99 (ms) — lower is better</div><div id="lat-chart"></div></div>`;
-
   setTimeout(()=>{
     const maxP=Math.max(...bmarks.map(b=>b.power));
     const bp=document.getElementById("bar-power");
     if(bp){setups.forEach((s,i)=>{const b=bmarks[i],pct=(b.power/maxP*100).toFixed(0),isBest=pwC[i]==="best";bp.innerHTML+=`<div class="bar-compare-row"><span class="bar-compare-label">${s.name.slice(0,18)}</span><div class="bar-compare-track"><div class="bar-compare-fill" style="width:${pct}%;background:${isBest?"#39ff9a":pwC[i]==="worst"?"#ff4757":"#ffa502"}33;"><span class="bar-compare-text" style="color:${s.color}">${b.power} kW${isBest?" ← BEST":""}</span></div></div></div>`;});}
     const maxL=Math.max(...bmarks.map(b=>b.p99));
     const lc=document.getElementById("lat-chart");
-    if(lc){setups.forEach((s,i)=>{const b=bmarks[i];lc.innerHTML+=`<div style="margin-bottom:8px;"><div style="font-size:7px;color:${s.color};letter-spacing:1px;margin-bottom:3px;">${s.name}</div>${[["P50",b.p50,"#2ed573"],["P95",b.p95,"#ffa502"],["P99",b.p99,"#ff4757"]].map(([l,v,c])=>`<div class="lat-row"><span class="lat-label">${l}</span><div class="lat-track"><div class="lat-fill" style="width:${Math.min(100,v/maxL*100)}%;background:${c}88;"></div></div><span style="font-size:8px;color:${c};min-width:55px;flex-shrink:0">${v.toLocaleString()} ms</span></div>`).join("")}</div>`;});}
+    if(lc){setups.forEach((s,i)=>{const b=bmarks[i];lc.innerHTML+=`<div style="margin-bottom:10px;"><div style="font-size:11px;font-weight:600;color:${s.color};letter-spacing:1px;margin-bottom:4px;">${s.name}</div>${[["P50",b.p50,"#2ed573"],["P95",b.p95,"#ffa502"],["P99",b.p99,"#ff4757"]].map(([l,v,c])=>`<div class="lat-row"><span class="lat-label">${l}</span><div class="lat-track"><div class="lat-fill" style="width:${Math.min(100,v/maxL*100)}%;background:${c}88;"></div></div><span style="font-size:11px;color:${c};min-width:65px;flex-shrink:0">${v.toLocaleString()} ms</span></div>`).join("")}</div>`;});}
   },80);
 }
 
@@ -945,10 +1461,11 @@ renderEvents();renderTable();
 tick();startSim();
 
 window.addEventListener("resize",()=>{
-  ["cpu","ram","net","pwr"].forEach(k=>{const c=document.getElementById("sp-"+k);if(c)c.width=c.offsetWidth||180;});
+  ["cpu","ram","net","pwr"].forEach(k=>{const c=document.getElementById("sp-"+k);if(c)c.width=c.offsetWidth||200;});
   renderSparklines();
   if(document.getElementById("tab-capacity").classList.contains("active"))renderCapacity();
 });
 </script>
-</body>
-</html>
+
+
+</body></html>
